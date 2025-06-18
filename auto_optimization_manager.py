@@ -39,6 +39,12 @@ class QuantConnectOptimizationManager:
             current_performance = self._get_current_performance()
             if current_performance and 'sharpe_ratio' in current_performance:
                 actual_sharpe = current_performance['sharpe_ratio']
+                
+                # 夏普比率合理性检查
+                if actual_sharpe > 3.5:  # 异常高的夏普比率
+                    self.algorithm.Debug(f"检测到异常高的夏普比率({actual_sharpe:.2f})，调整为保守值")
+                    actual_sharpe = min(actual_sharpe, 3.0)  # 限制为3.0
+                
                 # 如果实际夏普比率为0或负数，设置一个合理的基准
                 if actual_sharpe <= 0:
                     self.current_best_score = -1.0  # 设置为负数，便于找到改进
@@ -46,6 +52,13 @@ class QuantConnectOptimizationManager:
                 else:
                     self.current_best_score = actual_sharpe
                     self.algorithm.Debug(f"设置优化基准夏普比率为: {actual_sharpe:.4f}")
+                
+                # 检查是否应该进入高性能保护模式
+                total_return = current_performance.get('total_return', 0)
+                if total_return > 1000 and actual_sharpe > 2.0:
+                    self.algorithm.Debug(f"系统高性能运行(收益{total_return:.1f}%, 夏普{actual_sharpe:.2f})，启用保护模式")
+                    self.optimization_frequency = timedelta(days=90)  # 延长到3个月
+                    
             else:
                 self.current_best_score = -1.0
                 self.algorithm.Debug("无法获取当前性能，设置基准夏普比率为-1.0")
@@ -60,6 +73,23 @@ class QuantConnectOptimizationManager:
         """判断是否应该运行优化"""
         if not self.optimization_enabled:
             return False
+        
+        # 高性能保护模式：当系统表现优异时，降低优化频率
+        current_performance = self._get_current_performance()
+        if current_performance:
+            total_return = current_performance.get('total_return', 0)
+            sharpe_ratio = current_performance.get('sharpe_ratio', 0)
+            
+            # 如果系统表现非常好，进入保护模式
+            if total_return > 1000 and sharpe_ratio > 2.0:  # 1000%收益且夏普比率>2
+                self.algorithm.Debug(f"系统高性能运行中(收益{total_return:.1f}%, 夏普{sharpe_ratio:.2f})，进入保护模式")
+                # 延长优化频率到3个月
+                self.optimization_frequency = timedelta(days=90)
+                
+                # 只有在性能显著下降时才优化
+                if not self._significant_performance_degradation():
+                    self.algorithm.Debug("性能稳定，跳过优化")
+                    return False
             
         # 检查优化频率
         if self.last_optimization_date is None:
@@ -106,6 +136,7 @@ class QuantConnectOptimizationManager:
             if best_config:
                 self._log_optimization_results(best_config, optimization_results)
                 self._apply_best_configuration(best_config)
+                self.algorithm.Debug("找到更好的参数配置，应用新配置")
             else:
                 self.algorithm.Debug("未找到更好的参数配置，保持当前设置")
                 
@@ -593,6 +624,14 @@ class QuantConnectOptimizationManager:
                             if std_return > 0:
                                 # 年化夏普比率（假设日数据）
                                 annual_sharpe = (mean_return * 252) / (std_return * np.sqrt(252))
+                                
+                                # 异常值检测和修正
+                                if annual_sharpe > 5.0:  # 夏普比率超过5.0异常
+                                    self.algorithm.Debug(f"夏普比率异常高({annual_sharpe:.2f})，使用保守估算")
+                                    annual_sharpe = min(annual_sharpe, 3.0)  # 限制最大值为3.0
+                                elif annual_sharpe < -3.0:  # 夏普比率低于-3.0异常
+                                    annual_sharpe = max(annual_sharpe, -2.0)  # 限制最小值为-2.0
+                                
                                 return float(annual_sharpe)
                 
                 # 备用方法：使用简化计算
@@ -602,25 +641,67 @@ class QuantConnectOptimizationManager:
                     # 估算时间（天数）
                     if hasattr(self.algorithm, 'Time') and hasattr(self.algorithm, 'StartDate'):
                         days = (self.algorithm.Time - self.algorithm.StartDate).days
-                        if days > 0:
+                        if days > 30:  # 至少30天的数据
                             # 简化的年化夏普比率估算
                             annual_return = (1 + total_return) ** (365.0 / days) - 1
-                            # 假设波动率为15%（可以根据实际情况调整）
-                            estimated_volatility = 0.15
-                            estimated_sharpe = annual_return / estimated_volatility
+                            
+                            # 根据收益率估算合理的夏普比率
+                            if annual_return > 0:
+                                # 高收益通常伴随高波动，夏普比率不会太高
+                                estimated_sharpe = min(annual_return / 0.3, 2.5)  # 假设30%波动率，最大2.5
+                            else:
+                                estimated_sharpe = annual_return / 0.2  # 负收益时假设20%波动率
+                            
+                            # 最终的合理性检查
+                            estimated_sharpe = max(min(estimated_sharpe, 3.0), -2.0)
+                            
                             return float(estimated_sharpe)
                 
-                # 如果无法计算，返回基于收益率的简单估算
+                # 如果无法计算，返回基于收益率的保守估算
                 if hasattr(self.algorithm, '_initial_portfolio_value') and self.algorithm._initial_portfolio_value > 0:
                     total_return = current_value / self.algorithm._initial_portfolio_value - 1
-                    # 简单估算：正收益给正分数，负收益给负分数
-                    return float(total_return * 2)  # 简单的比例转换
+                    # 非常保守的估算：正收益给适中的正分数
+                    if total_return > 0:
+                        return min(total_return * 0.5, 2.0)  # 限制在2.0以内
+                    else:
+                        return max(total_return * 0.5, -1.0)  # 限制在-1.0以上
             
             return 0.0
             
         except Exception as e:
             self.algorithm.Debug(f"计算夏普比率失败: {e}")
             return 0.0
+    
+    def _significant_performance_degradation(self) -> bool:
+        """检查是否存在显著的性能恶化"""
+        try:
+            current_perf = self._get_current_performance()
+            
+            if not self.performance_baseline or not current_perf:
+                return False
+            
+            # 更严格的恶化标准（用于高性能保护模式）
+            baseline_return = self.performance_baseline.get('total_return', 0)
+            current_return = current_perf.get('total_return', 0)
+            return_degradation = current_return - baseline_return
+            
+            baseline_sharpe = self.performance_baseline.get('sharpe_ratio', 0)
+            current_sharpe = current_perf.get('sharpe_ratio', 0)
+            sharpe_degradation = baseline_sharpe - current_sharpe
+            
+            # 显著恶化的标准（更严格）
+            significant_degradation = (
+                return_degradation < -100.0 or  # 收益率下降超过100%
+                sharpe_degradation > 1.0        # 夏普比率下降超过1.0
+            )
+            
+            if significant_degradation:
+                self.algorithm.Debug(f"检测到显著性能恶化: 收益下降{abs(return_degradation):.1f}%, 夏普下降{sharpe_degradation:.2f}")
+            
+            return significant_degradation
+            
+        except Exception:
+            return False
 
 class OptimizationScheduler:
     """优化调度器"""
