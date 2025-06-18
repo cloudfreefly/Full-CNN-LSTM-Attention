@@ -2,6 +2,7 @@
 from AlgorithmImports import *
 import json
 import time
+import numpy as np
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Any, Optional
 from parameter_optimizer import ParameterOptimizationManager, OptimizationConfig
@@ -64,13 +65,21 @@ class QuantConnectOptimizationManager:
             return
             
         try:
+            self.algorithm.Debug("=" * 60)
             self.algorithm.Debug("开始运行参数优化...")
             
             # 获取当前性能指标作为基准
             current_performance = self._get_current_performance()
+            self._log_current_performance(current_performance)
+            
+            # 检查性能是否下降
+            performance_degraded = self._performance_degraded()
+            if performance_degraded:
+                self._log_performance_degradation()
             
             # 定义优化参数空间
             parameter_space = self._get_optimization_parameter_space()
+            self._log_optimization_parameters(parameter_space)
             
             # 运行优化
             optimization_results = self._run_optimization_batch(parameter_space)
@@ -80,13 +89,17 @@ class QuantConnectOptimizationManager:
             
             # 应用最佳配置
             if best_config:
+                self._log_optimization_results(best_config, optimization_results)
                 self._apply_best_configuration(best_config)
+            else:
+                self.algorithm.Debug("未找到更好的参数配置，保持当前设置")
                 
             # 记录优化历史
             self._record_optimization_result(current_performance, best_config)
             
             self.last_optimization_date = self.algorithm.Time
             self.algorithm.Debug("参数优化完成")
+            self.algorithm.Debug("=" * 60)
             
         except Exception as e:
             self.algorithm.Debug(f"参数优化失败: {e}")
@@ -241,6 +254,7 @@ class QuantConnectOptimizationManager:
         """获取当前性能指标"""
         try:
             portfolio_value = float(self.algorithm.Portfolio.TotalPortfolioValue)
+            cash_value = float(self.algorithm.Portfolio.Cash)
             
             # 计算收益率
             if hasattr(self.algorithm, '_initial_portfolio_value'):
@@ -248,12 +262,25 @@ class QuantConnectOptimizationManager:
             else:
                 total_return = 0
             
+            # 计算当前杠杆率
+            invested_value = portfolio_value - cash_value
+            leverage_ratio = invested_value / portfolio_value if portfolio_value > 0 else 0
+            
+            # 计算最大回撤
+            max_drawdown = self._calculate_current_drawdown()
+            
+            # 计算夏普比率（简化版）
+            sharpe_ratio = self._calculate_simple_sharpe_ratio()
+            
             # 获取其他性能指标
             return {
                 'portfolio_value': portfolio_value,
                 'total_return': total_return,
-                'cash_ratio': float(self.algorithm.Portfolio.Cash / portfolio_value),
+                'cash_ratio': cash_value / portfolio_value if portfolio_value > 0 else 0,
+                'leverage_ratio': leverage_ratio,
                 'num_holdings': len([h for h in self.algorithm.Portfolio.Values if h.Invested]),
+                'max_drawdown': max_drawdown,
+                'sharpe_ratio': sharpe_ratio,
                 'timestamp': self.algorithm.Time.isoformat()
             }
             
@@ -269,12 +296,39 @@ class QuantConnectOptimizationManager:
             if not self.performance_baseline or not current_perf:
                 return False
             
-            # 简单的性能退化检测
+            # 多维度性能退化检测
             baseline_return = self.performance_baseline.get('total_return', 0)
             current_return = current_perf.get('total_return', 0)
+            return_degradation = current_return - baseline_return
             
-            # 如果当前收益比基准低5%以上，认为性能退化
-            return (current_return - baseline_return) < -5.0
+            baseline_drawdown = self.performance_baseline.get('max_drawdown', 0)
+            current_drawdown = current_perf.get('max_drawdown', 0)
+            drawdown_increase = current_drawdown - baseline_drawdown
+            
+            baseline_sharpe = self.performance_baseline.get('sharpe_ratio', 0)
+            current_sharpe = current_perf.get('sharpe_ratio', 0)
+            sharpe_degradation = baseline_sharpe - current_sharpe
+            
+            # 综合判断性能是否退化
+            degraded = False
+            degradation_reasons = []
+            
+            if return_degradation < -5.0:
+                degraded = True
+                degradation_reasons.append(f"收益率下降{abs(return_degradation):.2f}%")
+            
+            if drawdown_increase > 3.0:
+                degraded = True
+                degradation_reasons.append(f"最大回撤增加{drawdown_increase:.2f}%")
+            
+            if sharpe_degradation > 0.5:
+                degraded = True
+                degradation_reasons.append(f"夏普比率下降{sharpe_degradation:.3f}")
+            
+            if degraded and degradation_reasons:
+                self.algorithm.Debug(f"性能退化原因: {', '.join(degradation_reasons)}")
+            
+            return degraded
             
         except Exception:
             return False
@@ -347,6 +401,124 @@ class QuantConnectOptimizationManager:
         summary += f"上次优化时间: {self.last_optimization_date}\n"
         
         return summary
+    
+    def _log_current_performance(self, performance: Dict):
+        """记录当前性能状态"""
+        self.algorithm.Debug("当前性能状态:")
+        self.algorithm.Debug(f"  组合价值: ${performance.get('portfolio_value', 0):,.2f}")
+        self.algorithm.Debug(f"  总收益率: {performance.get('total_return', 0):.2f}%")
+        self.algorithm.Debug(f"  现金比例: {performance.get('cash_ratio', 0):.2f}%")
+        self.algorithm.Debug(f"  杠杆比例: {performance.get('leverage_ratio', 0):.2f}")
+        self.algorithm.Debug(f"  持仓数量: {performance.get('num_holdings', 0)}")
+        self.algorithm.Debug(f"  最大回撤: {performance.get('max_drawdown', 0):.2f}%")
+        self.algorithm.Debug(f"  夏普比率: {performance.get('sharpe_ratio', 0):.3f}")
+    
+    def _log_performance_degradation(self):
+        """记录性能下降情况"""
+        if not self.performance_baseline:
+            return
+            
+        current_perf = self._get_current_performance()
+        baseline_return = self.performance_baseline.get('total_return', 0)
+        current_return = current_perf.get('total_return', 0)
+        degradation = current_return - baseline_return
+        
+        self.algorithm.Debug("检测到性能下降:")
+        self.algorithm.Debug(f"  基准收益率: {baseline_return:.2f}%")
+        self.algorithm.Debug(f"  当前收益率: {current_return:.2f}%")
+        self.algorithm.Debug(f"  性能下降: {degradation:.2f}%")
+        
+        # 分析可能的原因
+        baseline_drawdown = self.performance_baseline.get('max_drawdown', 0)
+        current_drawdown = current_perf.get('max_drawdown', 0)
+        
+        if current_drawdown > baseline_drawdown + 2:
+            self.algorithm.Debug(f"  回撤增加: {current_drawdown - baseline_drawdown:.2f}%")
+        
+        baseline_leverage = self.performance_baseline.get('leverage_ratio', 0)
+        current_leverage = current_perf.get('leverage_ratio', 0)
+        
+        if abs(current_leverage - baseline_leverage) > 0.1:
+            self.algorithm.Debug(f"  杠杆变化: {baseline_leverage:.2f} -> {current_leverage:.2f}")
+    
+    def _log_optimization_parameters(self, parameter_space: Dict):
+        """记录优化参数空间"""
+        vix_level = self._get_current_vix_level()
+        market_vol = self._get_market_volatility()
+        
+        self.algorithm.Debug("优化参数设置:")
+        self.algorithm.Debug(f"  VIX水平: {vix_level:.2f}")
+        self.algorithm.Debug(f"  市场波动率: {market_vol:.2f}%")
+        self.algorithm.Debug("  参数空间:")
+        
+        for param_name, param_values in parameter_space.items():
+            self.algorithm.Debug(f"    {param_name}: {param_values}")
+    
+    def _log_optimization_results(self, best_config: Dict, all_results: List[Dict]):
+        """记录优化结果"""
+        self.algorithm.Debug("优化结果:")
+        self.algorithm.Debug(f"  测试配置数量: {len(all_results)}")
+        
+        if all_results:
+            scores = [r.get('best_score', 0) for r in all_results if 'best_score' in r]
+            if scores:
+                self.algorithm.Debug(f"  最高评分: {max(scores):.4f}")
+                self.algorithm.Debug(f"  最低评分: {min(scores):.4f}")
+                self.algorithm.Debug(f"  平均评分: {sum(scores)/len(scores):.4f}")
+        
+        self.algorithm.Debug("  最佳参数配置:")
+        for param_name, param_value in best_config.items():
+            old_value = self._get_current_parameter_value(param_name)
+            if old_value is not None and old_value != param_value:
+                self.algorithm.Debug(f"    {param_name}: {old_value} -> {param_value}")
+            else:
+                self.algorithm.Debug(f"    {param_name}: {param_value}")
+    
+    def _get_current_parameter_value(self, param_name: str):
+        """获取当前参数值"""
+        try:
+            if param_name == 'max_drawdown':
+                return self.config.RISK_CONFIG.get('max_drawdown')
+            elif param_name == 'volatility_threshold':
+                return self.config.RISK_CONFIG.get('volatility_threshold')
+            elif param_name == 'max_leverage_ratio':
+                return self.config.LEVERAGE_CONFIG.get('max_leverage_ratio')
+            elif param_name == 'target_portfolio_size':
+                return self.config.PORTFOLIO_CONFIG.get('target_portfolio_size')
+            elif param_name == 'max_weight':
+                return self.config.PORTFOLIO_CONFIG.get('max_weight')
+            elif param_name == 'rebalance_tolerance':
+                return self.config.PORTFOLIO_CONFIG.get('rebalance_tolerance')
+            elif param_name == 'vix_extreme_level':
+                return self.config.RISK_CONFIG.get('vix_extreme_level')
+            elif param_name == 'defensive_max_cash_ratio':
+                return self.config.PORTFOLIO_CONFIG.get('defensive_max_cash_ratio')
+        except:
+            pass
+        return None
+    
+    def _calculate_current_drawdown(self) -> float:
+        """计算当前最大回撤"""
+        try:
+            if hasattr(self.algorithm, 'drawdown_monitor'):
+                return self.algorithm.drawdown_monitor.current_drawdown * 100
+            return 0.0
+        except:
+            return 0.0
+    
+    def _calculate_simple_sharpe_ratio(self) -> float:
+        """计算简化的夏普比率"""
+        try:
+            if hasattr(self.algorithm, '_daily_returns') and len(self.algorithm._daily_returns) > 10:
+                returns = self.algorithm._daily_returns[-252:]  # 最近一年
+                if len(returns) > 10:
+                    mean_return = np.mean(returns)
+                    std_return = np.std(returns)
+                    if std_return > 0:
+                        return (mean_return * 252) / (std_return * np.sqrt(252))
+            return 0.0
+        except:
+            return 0.0
 
 class OptimizationScheduler:
     """优化调度器"""
