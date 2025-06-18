@@ -631,7 +631,7 @@ class PortfolioOptimizer:
                     final_weights = np.zeros_like(final_weights)
             else:
                 # 传统模式：权重总和归一化为1.0
-            final_weights = final_weights / np.sum(final_weights)
+                final_weights = final_weights / np.sum(final_weights)
                 self.algorithm.log_debug("传统模式权重归一化", log_type="portfolio")
             
             self.algorithm.log_debug(f"最终组合: {len(final_symbols)}只股票, 总权重: {np.sum(final_weights):.2f}", log_type="portfolio")
