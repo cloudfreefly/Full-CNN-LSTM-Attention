@@ -187,10 +187,10 @@ class SmartRebalancer:
                             'trade_value': trade_value,
                             'price': current_price
                         })
-                        self.algorithm.log_debug(f"交易指令: {symbol_str} {quantity_diff:+d}股, "
+                        self.algorithm.log_debug(f"交易指令: {symbol_str} {quantity_diff:+.0f}股, "
                                                f"金额: ${trade_value:,.2f}")
                     else:
-                        self.algorithm.log_debug(f"跳过小额交易: {symbol_str} {quantity_diff:+d}股, "
+                        self.algorithm.log_debug(f"跳过小额交易: {symbol_str} {quantity_diff:+.0f}股, "
                                                f"金额: ${trade_value:,.2f} < 最小限额: ${min_trade_value:,.0f}")
             
             # 处理需要清仓的股票 - 清仓不受最小金额限制
