@@ -1026,11 +1026,11 @@ class VIXMonitor:
                 
                 # 极端模式下的配置
                 risk_state['max_equity_ratio'] = self.config.RISK_CONFIG['vix_defense_min_equity']
-                risk_state['hedge_allocation'] = self.config.RISK_CONFIG['vix_hedging_allocation']
+                risk_state['hedge_allocation'] = self.config.RISK_CONFIG['vix_extreme_hedging_allocation']
                 
                 cash_ratio = 1.0 - risk_state['max_equity_ratio']
                 self.algorithm.Debug(f"VIX极端水平触发最小仓位模式: VIX={current_vix:.2f}")
-                self.algorithm.Debug(f"极端防御模式: 股票仓位{risk_state['max_equity_ratio']:.1%}, 现金比例{cash_ratio:.1%}")
+                self.algorithm.Debug(f"极端防御模式: 股票仓位{risk_state['max_equity_ratio']:.1%}, 现金比例{cash_ratio:.1%}, 对冲分配{risk_state['hedge_allocation']:.1%}")
             
             elif risk_state['defense_mode']:
                 # 防御模式但非极端情况
@@ -1209,7 +1209,11 @@ class VIXMonitor:
             
             # 逐步减少对冲仓位
             hedge_reduction = self.config.RISK_CONFIG['vix_recovery_hedge_reduction']
-            base_hedge = self.config.RISK_CONFIG['vix_hedging_allocation']
+            # 根据恢复前的状态确定基础对冲分配
+            if self._extreme_mode_active:
+                base_hedge = self.config.RISK_CONFIG['vix_extreme_hedging_allocation']
+            else:
+                base_hedge = self.config.RISK_CONFIG['vix_hedging_allocation']
             risk_state['hedge_allocation'] = max(0, base_hedge * (1 - self._recovery_progress * hedge_reduction))
             
             self.algorithm.Debug(f"逐步恢复 - 股票仓位: {current_equity_ratio:.1%}, 进度: {self._recovery_progress:.1%}, 对冲: {risk_state['hedge_allocation']:.1%}")

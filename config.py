@@ -275,7 +275,8 @@ class AlgorithmConfig:
         'vix_extreme_level': 30,           # VIX极端水平进一步降至30（从35）
         'vix_defense_min_equity': 0.30,    # VIX防御模式最小股票仓位30%（现金比例70%）
         'vix_defense_max_cash': 0.70,      # VIX防御模式最大现金比例70%
-        'vix_hedging_allocation': 0.30,    # 对冲产品分配比例提高至30%（从25%）
+        'vix_hedging_allocation': 0.30,    # 对冲产品分配比例30%（防御模式基础）
+        'vix_extreme_hedging_allocation': 0.50,  # 极端模式下对冲产品分配比例50%
         'vix_normalization_threshold': 18, # VIX正常化阈值进一步降至18（从20）
         'vix_lookback_days': 10,           # VIX历史数据回望天数
         
@@ -364,8 +365,8 @@ class AlgorithmConfig:
         'optimization_frequency_days': 30,  # 优化频率（天）
         'performance_degradation_threshold': -5.0,  # 性能下降阈值（%）
         'max_optimization_time': 1800,  # 最大优化时间（秒）
-        'optimization_method': 'random_search',  # 优化方法：random_search, grid_search, bayesian
-        'max_iterations': 20,  # 最大迭代次数
+        'optimization_method': 'grid_search',  # 优化方法：random_search, grid_search, bayesian
+        'max_iterations': 30,  # 最大迭代次数
         'weekend_optimization': True,  # 是否在周末进行优化
         'market_close_optimization': True,  # 是否在收盘后进行优化
         'save_optimization_history': True,  # 是否保存优化历史
@@ -405,10 +406,10 @@ class AlgorithmConfig:
         
         # 优化目标函数权重
         'objective_weights': {
-            'sharpe_ratio': 0.4,
+            'sharpe_ratio': 0.3,
             'calmar_ratio': 0.3,
             'max_drawdown': 0.2,  # 负向权重，回撤越小越好
-            'win_rate': 0.1
+            'win_rate': 0.2
         }
     }
     
