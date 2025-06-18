@@ -12,13 +12,13 @@ class CovarianceCalculator:
     def calculate_covariance_matrix(self, symbols):
         """计算协方差矩阵"""
         try:
-            self.algorithm.log_debug(f"开始计算协方差矩阵，股票数量: {len(symbols)}")
+            self.algorithm.log_debug(f"开始计算协方差矩阵，股票数量: {len(symbols)}", log_type="portfolio")
             
             # 获取历史收益率
             returns_data = self._get_historical_returns(symbols)
             
             if returns_data is None or returns_data.empty:
-                self.algorithm.log_debug("无法获取历史收益率数据")
+                self.algorithm.log_debug("无法获取历史收益率数据", log_type="portfolio")
                 return np.eye(len(symbols)) * 0.01  # 返回单位矩阵
             
             # 计算协方差矩阵
@@ -30,7 +30,7 @@ class CovarianceCalculator:
             return cov_matrix
             
         except Exception as e:
-            self.algorithm.log_debug(f"协方差矩阵计算失败: {str(e)}")
+            self.algorithm.log_debug(f"协方差矩阵计算失败: {str(e)}", log_type="portfolio")
             return np.eye(len(symbols)) * 0.01
     
     def _get_historical_returns(self, symbols):
@@ -43,10 +43,10 @@ class CovarianceCalculator:
             try:
                 history = self.algorithm.History(symbols, history_days, Resolution.Daily)
                 if history.empty:
-                    self.algorithm.log_debug("历史数据为空")
+                    self.algorithm.log_debug("历史数据为空", log_type="portfolio")
                     return None
             except Exception as e:
-                self.algorithm.log_debug(f"获取历史数据失败: {str(e)}")
+                self.algorithm.log_debug(f"获取历史数据失败: {str(e)}", log_type="portfolio")
                 return None
             
             # 将历史数据转换为DataFrame
@@ -60,7 +60,7 @@ class CovarianceCalculator:
                     continue
             
             if not price_data:
-                self.algorithm.log_debug("没有可用的价格数据")
+                self.algorithm.log_debug("没有可用的价格数据", log_type="portfolio")
                 return None
             
             price_df = pd.DataFrame(price_data)
@@ -75,7 +75,7 @@ class CovarianceCalculator:
             return returns_df
             
         except Exception as e:
-            self.algorithm.log_debug(f"获取历史收益率失败: {str(e)}")
+            self.algorithm.log_debug(f"获取历史收益率失败: {str(e)}", log_type="portfolio")
             return None
     
     def _validate_returns(self, returns, symbol):
@@ -104,12 +104,12 @@ class CovarianceCalculator:
                 # 添加对角线正则化
                 regularization = 0.001
                 cov_matrix += np.eye(cov_matrix.shape[0]) * regularization
-                self.algorithm.log_debug("协方差矩阵已正则化")
+                self.algorithm.log_debug("协方差矩阵已正则化", log_type="portfolio")
             
             return cov_matrix
             
         except Exception as e:
-            self.algorithm.log_debug(f"协方差矩阵清理失败: {str(e)}")
+            self.algorithm.log_debug(f"协方差矩阵清理失败: {str(e)}", log_type="portfolio")
             # 返回单位矩阵作为备用
             n = cov_matrix.shape[0] if hasattr(cov_matrix, 'shape') else len(cov_matrix)
             return np.eye(n) * 0.01 

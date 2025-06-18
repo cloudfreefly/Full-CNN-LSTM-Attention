@@ -12,7 +12,7 @@ class DiversificationEnforcer:
         """强制执行多元化策略"""
         try:
             if len(weights) == 0 or len(symbols) == 0:
-                self.algorithm.log_debug(f"输入为空，跳过多元化强制执行")
+                self.algorithm.log_debug(f"输入为空，跳过多元化强制执行", log_type="diversification")
                 return weights, symbols
             
             # 获取风险控制开关
@@ -38,7 +38,7 @@ class DiversificationEnforcer:
             # 检查是否启用分散化强制执行
             if not risk_switches.get('enable_diversification_enforcer', True):
                 if risk_switches.get('enable_risk_logging', True):
-                    self.algorithm.log_debug(f"分散化强制执行已禁用")
+                    self.algorithm.log_debug(f"分散化强制执行已禁用", log_type="diversification")
                 return weights, symbols
             
             # 1. 检查当前多元化状态
@@ -50,20 +50,20 @@ class DiversificationEnforcer:
             # 2. 如果多元化不足，强制改进
             if diversification_metrics['is_under_diversified']:
                 if risk_switches.get('enable_risk_logging', True):
-                    self.algorithm.log_debug(f"多元化不足({diversification_metrics['n_stocks']}只股票)，强制改进")
+                    self.algorithm.log_debug(f"多元化不足({diversification_metrics['n_stocks']}只股票)，强制改进", log_type="diversification")
                 
                 weights, symbols = self._force_diversification(weights, symbols, expected_returns)
                 
                 # 3. 验证结果
                 final_metrics = self._calculate_diversification_metrics(weights, symbols)
                 if risk_switches.get('enable_risk_logging', True):
-                    self.algorithm.log_debug(f"强制多元化完成: {final_metrics['n_stocks']}只股票")
+                    self.algorithm.log_debug(f"强制多元化完成: {final_metrics['n_stocks']}只股票", log_type="diversification")
                 
                 if risk_switches.get('enable_detailed_risk_analysis', True):
                     self._log_diversification_metrics(final_metrics, "改进后")
             else:
                 if risk_switches.get('enable_risk_logging', True):
-                    self.algorithm.log_debug(f"当前多元化状态良好，无需强制改进")
+                    self.algorithm.log_debug(f"当前多元化状态良好，无需强制改进", log_type="diversification")
             
             return weights, symbols
             
@@ -103,13 +103,13 @@ class DiversificationEnforcer:
     def _log_diversification_metrics(self, metrics, prefix=""):
         """记录多元化指标"""
         prefix_str = f"{prefix} " if prefix else ""
-        self.algorithm.log_debug(f"{prefix_str}多元化指标:")
-        self.algorithm.log_debug(f"  股票数量: {metrics['n_stocks']}")
-        self.algorithm.log_debug(f"  最大权重: {metrics['max_weight']:.2%}")
-        self.algorithm.log_debug(f"  权重标准差: {metrics['weight_std']:.3f}")
-        self.algorithm.log_debug(f"  集中度比率(前3): {metrics['concentration_ratio']:.2%}")
-        self.algorithm.log_debug(f"  有效股票数: {metrics['effective_stocks']:.1f}")
-        self.algorithm.log_debug(f"  多元化不足: {'是' if metrics['is_under_diversified'] else '否'}")
+        self.algorithm.log_debug(f"{prefix_str}多元化指标:", log_type="diversification")
+        self.algorithm.log_debug(f"  股票数量: {metrics['n_stocks']}", log_type="diversification")
+        self.algorithm.log_debug(f"  最大权重: {metrics['max_weight']:.2%}", log_type="diversification")
+        self.algorithm.log_debug(f"  权重标准差: {metrics['weight_std']:.3f}", log_type="diversification")
+        self.algorithm.log_debug(f"  集中度比率(前3): {metrics['concentration_ratio']:.2%}", log_type="diversification")
+        self.algorithm.log_debug(f"  有效股票数: {metrics['effective_stocks']:.1f}", log_type="diversification")
+        self.algorithm.log_debug(f"  多元化不足: {'是' if metrics['is_under_diversified'] else '否'}", log_type="diversification")
     
     def _force_diversification(self, weights, symbols, expected_returns=None):
         """强制多元化"""
@@ -121,7 +121,7 @@ class DiversificationEnforcer:
             
             # 策略1：如果股票数量不足，扩展股票池
             if len(symbols) < min_stocks:
-                self.algorithm.log_debug(f"股票数量不足({len(symbols)} < {min_stocks})，尝试扩展")
+                self.algorithm.log_debug(f"股票数量不足({len(symbols)} < {min_stocks})，尝试扩展", log_type="diversification")
                 # 这里需要从更大的股票池中选择，暂时使用当前的
                 target_stocks = max(min_stocks, len(symbols))
             
@@ -133,7 +133,7 @@ class DiversificationEnforcer:
             # 策略3：如果仍然不够多元化，强制等权重分配
             final_metrics = self._calculate_diversification_metrics(new_weights, symbols)
             if final_metrics['is_under_diversified']:
-                self.algorithm.log_debug(f"仍然多元化不足，采用强制等权重策略")
+                self.algorithm.log_debug(f"仍然多元化不足，采用强制等权重策略", log_type="diversification")
                 new_weights = self._apply_equal_weight_fallback(symbols, target_stocks)
             
             return new_weights, symbols
@@ -179,7 +179,7 @@ class DiversificationEnforcer:
             # 6. 最终归一化
             diversified_weights = diversified_weights / np.sum(diversified_weights)
             
-            self.algorithm.log_debug(f"权重重分配完成: 最大权重={np.max(diversified_weights):.2%}")
+            self.algorithm.log_debug(f"权重重分配完成: 最大权重={np.max(diversified_weights):.2%}", log_type="diversification")
             
             return diversified_weights
             
@@ -202,7 +202,7 @@ class DiversificationEnforcer:
             # 可以根据预期收益或其他指标选择，这里简化为前n_stocks只
             equal_weights = np.concatenate([equal_weights, np.zeros(len(symbols) - n_stocks)])
         
-        self.algorithm.log_debug(f"应用等权重备用策略: {n_stocks}只股票，每只权重={1/n_stocks:.2%}")
+        self.algorithm.log_debug(f"应用等权重备用策略: {n_stocks}只股票，每只权重={1/n_stocks:.2%}", log_type="diversification")
         
         return equal_weights
     
@@ -228,7 +228,7 @@ class DiversificationEnforcer:
                 metrics = self._calculate_diversification_metrics(weight_array, current_holdings)
                 
                 # 记录状态
-                self.algorithm.log_debug("=== 当前投资组合多元化检查 ===")
+                self.algorithm.log_debug("=== 当前投资组合多元化检查 ===", log_type="diversification")
                 self._log_diversification_metrics(metrics)
                 
                 return metrics

@@ -55,7 +55,7 @@ class PortfolioOptimizer:
         try:
             # 检查是否禁用复杂优化，直接使用等权重
             if self.config.PORTFOLIO_CONFIG.get('disable_optimization', False):
-                self.algorithm.log_debug(f"直接使用等权重策略，跳过复杂优化")
+                self.algorithm.log_debug(f"直接使用等权重策略，跳过复杂优化", log_type="portfolio")
                 target_size = self.config.PORTFOLIO_CONFIG['target_portfolio_size']
                 n_symbols = min(target_size, len(symbols))
                 
@@ -72,9 +72,9 @@ class PortfolioOptimizer:
                 # 等权重分配
                 equal_weights = np.ones(n_symbols) / n_symbols
                 
-                self.algorithm.log_debug(f"等权重组合: {n_symbols}只股票，每只{1/n_symbols:.1%}")
+                self.algorithm.log_debug(f"等权重组合: {n_symbols}只股票，每只{1/n_symbols:.1%}", log_type="portfolio")
                 for symbol in selected_symbols:
-                    self.algorithm.log_debug(f"  {symbol}: {1/n_symbols:.1%}")
+                    self.algorithm.log_debug(f"  {symbol}: {1/n_symbols:.1%}", log_type="portfolio")
                 
                 return equal_weights, selected_symbols
             
@@ -98,28 +98,28 @@ class PortfolioOptimizer:
                 return np.ones(n) / n, symbols
             
             # 应用防御策略：处理负期望收益的标的
-            self.algorithm.log_debug("Step 2: Applying defensive strategy...")
+            self.algorithm.log_debug("Step 2: Applying defensive strategy...", log_type="portfolio")
             try:
                 filtered_returns, filtered_cov, filtered_symbols = self._apply_defensive_strategy(
                     expected_returns, covariance_matrix, symbols
                 )
-                self.algorithm.log_debug("Defensive strategy result:")
-                self.algorithm.log_debug(f"  Original symbols: {len(symbols)}")
-                self.algorithm.log_debug(f"  Filtered symbols: {len(filtered_symbols)}")
-                self.algorithm.log_debug(f"  Filtered returns shape: {filtered_returns.shape if hasattr(filtered_returns, 'shape') else len(filtered_returns)}")
+                self.algorithm.log_debug("Defensive strategy result:", log_type="portfolio")
+                self.algorithm.log_debug(f"  Original symbols: {len(symbols)}", log_type="portfolio")
+                self.algorithm.log_debug(f"  Filtered symbols: {len(filtered_symbols)}", log_type="portfolio")
+                self.algorithm.log_debug(f"  Filtered returns shape: {filtered_returns.shape if hasattr(filtered_returns, 'shape') else len(filtered_returns)}", log_type="portfolio")
                 
             except Exception as defensive_error:
-                self.algorithm.log_debug(f"Error in defensive strategy: {defensive_error}")
+                self.algorithm.log_debug(f"Error in defensive strategy: {defensive_error}", log_type="portfolio")
                 # 使用原始数据
                 filtered_returns, filtered_cov, filtered_symbols = expected_returns, covariance_matrix, symbols
             
             # 如果所有标的都被过滤掉，返回空组合
             if len(filtered_symbols) == 0:
-                self.algorithm.log_debug("⚠️  All symbols filtered out due to negative returns - holding cash")
+                self.algorithm.log_debug("⚠️  All symbols filtered out due to negative returns - holding cash", log_type="portfolio")
                 return np.array([]), []
             
             # 尝试多种优化方法（使用过滤后的数据）
-            self.algorithm.log_debug("Step 3: Trying multiple optimization methods...")
+            self.algorithm.log_debug("Step 3: Trying multiple optimization methods...", log_type="portfolio")
             optimization_methods = [
                 ("Mean-Variance", self.optimization_strategies.mean_variance_optimization),
                 ("Risk-Parity", self.optimization_strategies.risk_parity_optimization),
@@ -132,72 +132,72 @@ class PortfolioOptimizer:
             
             for method_name, method_func in optimization_methods:
                 try:
-                    self.algorithm.log_debug(f"Trying {method_name} optimization...")
+                    self.algorithm.log_debug(f"Trying {method_name} optimization...", log_type="portfolio")
                     weights = method_func(filtered_returns, filtered_cov)
                     
                     if weights is not None:
-                        self.algorithm.log_debug(f"{method_name} returned weights: {weights}")
+                        self.algorithm.log_debug(f"{method_name} returned weights: {weights}", log_type="portfolio")
                         score = self.optimization_strategies.evaluate_portfolio_quality(weights, filtered_returns, filtered_cov)
                         method_results.append(f"{method_name}: {score:.4f}")
-                        self.algorithm.log_debug(f"{method_name} score: {score:.4f}")
+                        self.algorithm.log_debug(f"{method_name} score: {score:.4f}", log_type="portfolio")
                         
                         if score > best_score:
                             best_weights = weights
                             best_score = score
-                            self.algorithm.log_debug(f"✓ {method_name} optimization succeeded (new best score: {score:.4f})")
+                            self.algorithm.log_debug(f"✓ {method_name} optimization succeeded (new best score: {score:.4f})", log_type="portfolio")
                         else:
-                            self.algorithm.log_debug(f"○ {method_name} optimization completed (score: {score:.4f})")
+                            self.algorithm.log_debug(f"○ {method_name} optimization completed (score: {score:.4f})", log_type="portfolio")
                     else:
                         method_results.append(f"{method_name}: Failed")
-                        self.algorithm.log_debug(f"✗ {method_name} optimization returned None")
+                        self.algorithm.log_debug(f"✗ {method_name} optimization returned None", log_type="portfolio")
                         
                 except Exception as method_error:
                     method_results.append(f"{method_name}: Error")
-                    self.algorithm.log_debug(f"✗ {method_name} optimization failed: {method_error}")
+                    self.algorithm.log_debug(f"✗ {method_name} optimization failed: {method_error}", log_type="portfolio")
                     import traceback
-                    self.algorithm.log_debug(f"{method_name} error traceback: {traceback.format_exc()}")
+                    self.algorithm.log_debug(f"{method_name} error traceback: {traceback.format_exc()}", log_type="portfolio")
                     continue
             
             # 记录所有方法的结果
-            self.algorithm.log_debug(f"Optimization results: {', '.join(method_results)}")
+            self.algorithm.log_debug(f"Optimization results: {', '.join(method_results)}", log_type="portfolio")
             
             if best_weights is None:
-                self.algorithm.log_debug("All optimization methods failed, using equal weights")
+                self.algorithm.log_debug("All optimization methods failed, using equal weights", log_type="portfolio")
                 best_weights = np.ones(len(filtered_symbols)) / len(filtered_symbols)
                 best_score = 0.0
             
             # 应用约束和限制
-            self.algorithm.log_debug("Step 4: Applying constraints...")
+            self.algorithm.log_debug("Step 4: Applying constraints...", log_type="portfolio")
             try:
                 constrained_weights = self._apply_constraints(best_weights, filtered_symbols)
-                self.algorithm.log_debug("Constraints applied:")
-                self.algorithm.log_debug(f"  Before: {best_weights}")
-                self.algorithm.log_debug(f"  After: {constrained_weights}")
+                self.algorithm.log_debug("Constraints applied:", log_type="portfolio")
+                self.algorithm.log_debug(f"  Before: {best_weights}", log_type="portfolio")
+                self.algorithm.log_debug(f"  After: {constrained_weights}", log_type="portfolio")
             except Exception as constraint_error:
-                self.algorithm.log_debug(f"Error applying constraints: {constraint_error}")
+                self.algorithm.log_debug(f"Error applying constraints: {constraint_error}", log_type="portfolio")
                 constrained_weights = best_weights
             
             # 最终筛选
-            self.algorithm.log_debug("Step 5: Final screening...")
+            self.algorithm.log_debug("Step 5: Final screening...", log_type="portfolio")
             try:
                 final_weights, final_symbols = self._final_screening(constrained_weights, filtered_symbols)
-                self.algorithm.log_debug("Final screening result:")
-                self.algorithm.log_debug(f"  Weights: {final_weights}")
-                self.algorithm.log_debug(f"  Symbols: {final_symbols}")
+                self.algorithm.log_debug("Final screening result:", log_type="portfolio")
+                self.algorithm.log_debug(f"  Weights: {final_weights}", log_type="portfolio")
+                self.algorithm.log_debug(f"  Symbols: {final_symbols}", log_type="portfolio")
             except Exception as screening_error:
-                self.algorithm.log_debug(f"Error in final screening: {screening_error}")
+                self.algorithm.log_debug(f"Error in final screening: {screening_error}", log_type="portfolio")
                 final_weights, final_symbols = constrained_weights, filtered_symbols
             
-            self.algorithm.log_debug(f"=== Portfolio optimization completed ===")
-            self.algorithm.log_debug("Results summary:")
-            self.algorithm.log_debug(f"  Best method score: {best_score:.4f}")
-            self.algorithm.log_debug(f"  Final symbols count: {len(final_symbols)}")
-            self.algorithm.log_debug(f"  Final weights sum: {np.sum(final_weights) if final_weights is not None and len(final_weights) > 0 else 'N/A'}")
+            self.algorithm.log_debug(f"=== Portfolio optimization completed ===", log_type="portfolio")
+            self.algorithm.log_debug("Results summary:", log_type="portfolio")
+            self.algorithm.log_debug(f"  Best method score: {best_score:.4f}", log_type="portfolio")
+            self.algorithm.log_debug(f"  Final symbols count: {len(final_symbols)}", log_type="portfolio")
+            self.algorithm.log_debug(f"  Final weights sum: {np.sum(final_weights) if final_weights is not None and len(final_weights) > 0 else 'N/A'}", log_type="portfolio")
             
-            self.algorithm.log_debug(f"[优化器] 收到预期收益: {expected_returns}")
-            self.algorithm.log_debug(f"[优化器] 收到协方差矩阵: {covariance_matrix}")
-            self.algorithm.log_debug(f"[优化器] 收到可用股票列表: {symbols}")
-            self.algorithm.log_debug(f"[优化器] 输出目标权重: {final_weights}")
+            self.algorithm.log_debug(f"[优化器] 收到预期收益: {expected_returns}", log_type="portfolio")
+            self.algorithm.log_debug(f"[优化器] 收到协方差矩阵: {covariance_matrix}", log_type="portfolio")
+            self.algorithm.log_debug(f"[优化器] 收到可用股票列表: {symbols}", log_type="portfolio")
+            self.algorithm.log_debug(f"[优化器] 输出目标权重: {final_weights}", log_type="portfolio")
             
             # 修复NumPy数组布尔值判断问题
             weights_empty = (final_weights is None or 
@@ -211,25 +211,25 @@ class PortfolioOptimizer:
                     weights_all_zero = all(w == 0 for w in final_weights)
             
             if weights_empty or weights_all_zero:
-                self.algorithm.log_debug('[优化器] 优化失败，全部权重为0或无权重')
+                self.algorithm.log_debug('[优化器] 优化失败，全部权重为0或无权重', log_type="portfolio")
             if hasattr(self, '_last_decision_factors'):
-                self.algorithm.log_debug(f"[优化器] 决策因子: {self._last_decision_factors}")
+                self.algorithm.log_debug(f"[优化器] 决策因子: {self._last_decision_factors}", log_type="portfolio")
             
             return final_weights, final_symbols
             
         except Exception as e:
-            self.algorithm.log_debug(f"CRITICAL ERROR in portfolio optimization: {str(e)}")
-            self.algorithm.log_debug(f"Portfolio optimization error type: {type(e).__name__}")
+            self.algorithm.log_debug(f"CRITICAL ERROR in portfolio optimization: {str(e)}", log_type="portfolio")
+            self.algorithm.log_debug(f"Portfolio optimization error type: {type(e).__name__}", log_type="portfolio")
             import traceback
-            self.algorithm.log_debug(f"Portfolio optimization error traceback: {traceback.format_exc()}")
+            self.algorithm.log_debug(f"Portfolio optimization error traceback: {traceback.format_exc()}", log_type="portfolio")
             
             n = len(symbols)
             if n > 0:
                 equal_weights = np.ones(n) / n
-                self.algorithm.log_debug(f"Returning emergency equal weights: {equal_weights}")
+                self.algorithm.log_debug(f"Returning emergency equal weights: {equal_weights}", log_type="portfolio")
                 return equal_weights, symbols
             else:
-                self.algorithm.log_debug("Returning empty arrays due to critical error")
+                self.algorithm.log_debug("Returning empty arrays due to critical error", log_type="portfolio")
                 return np.array([]), []
     
     def _validate_optimization_inputs(self, expected_returns, 
@@ -258,7 +258,7 @@ class PortfolioOptimizer:
         try:
             # 检查输入数据的一致性
             if len(expected_returns) != len(symbols) or covariance_matrix.shape[0] != len(symbols):
-                self.algorithm.log_debug(f"Input size mismatch: returns={len(expected_returns)}, symbols={len(symbols)}, cov={covariance_matrix.shape}")
+                self.algorithm.log_debug(f"Input size mismatch: returns={len(expected_returns)}, symbols={len(symbols)}, cov={covariance_matrix.shape}", log_type="portfolio")
                 return expected_returns, covariance_matrix, symbols
             
             # 计算市场状态指标
@@ -266,10 +266,10 @@ class PortfolioOptimizer:
             negative_ratio = np.sum(expected_returns < 0) / len(expected_returns)
             volatility_estimate = np.sqrt(np.mean(np.diag(covariance_matrix))) if covariance_matrix.shape[0] > 0 else 0
             
-            self.algorithm.log_debug("Market condition analysis:")
-            self.algorithm.log_debug(f"  Average expected return: {avg_expected_return:.4f}")
-            self.algorithm.log_debug(f"  Negative return ratio: {negative_ratio:.2%}")
-            self.algorithm.log_debug(f"  Estimated volatility: {volatility_estimate:.4f}")
+            self.algorithm.log_debug("Market condition analysis:", log_type="portfolio")
+            self.algorithm.log_debug(f"  Average expected return: {avg_expected_return:.4f}", log_type="portfolio")
+            self.algorithm.log_debug(f"  Negative return ratio: {negative_ratio:.2%}", log_type="portfolio")
+            self.algorithm.log_debug(f"  Estimated volatility: {volatility_estimate:.4f}", log_type="portfolio")
             
             # 动态判断是否需要防御策略（更宽松的触发条件）
             should_apply_defense = False
@@ -310,7 +310,7 @@ class PortfolioOptimizer:
                         # 高回撤时强制激活对冲策略
                         if current_drawdown > 0.20:  # 回撤 > 20%时强制对冲
                             self._force_hedging_activation = True
-                            self.algorithm.log_debug(f"高回撤触发强制对冲: {current_drawdown:.1%}")
+                            self.algorithm.log_debug(f"高回撤触发强制对冲: {current_drawdown:.1%}", log_type="portfolio")
                         else:
                             self._force_hedging_activation = False
                 
@@ -325,11 +325,11 @@ class PortfolioOptimizer:
                         defense_reason += " + 波动率警告"
                         
             except Exception as risk_check_error:
-                self.algorithm.log_debug(f"Error checking additional risk metrics: {risk_check_error}")
+                self.algorithm.log_debug(f"Error checking additional risk metrics: {risk_check_error}", log_type="portfolio")
             
             # 如果不需要应用防御策略，仍然要进行常规筛选
             if not should_apply_defense:
-                self.algorithm.log_debug("市场状况良好，使用常规策略但仍会动态调整现金比例")
+                self.algorithm.log_debug("市场状况良好，使用常规策略但仍会动态调整现金比例", log_type="portfolio")
                 # 保存平均预期收益，用于动态现金管理
                 self.algorithm._last_avg_expected_return = avg_expected_return
                 self.algorithm._market_volatility = volatility_estimate
@@ -337,7 +337,7 @@ class PortfolioOptimizer:
                 return expected_returns, covariance_matrix, symbols
             
             # 应用防御策略
-            self.algorithm.log_debug(f"触发防御策略: {defense_reason}")
+            self.algorithm.log_debug(f"触发防御策略: {defense_reason}", log_type="portfolio")
             
             # 防御策略参数
             min_return_threshold = self.config.PORTFOLIO_CONFIG.get('moderate_loss_threshold', -0.02)  # -2%
@@ -385,20 +385,20 @@ class PortfolioOptimizer:
                             idx = candidate_scores[i][0]
                             selected_mask[idx] = True
                         
-                        self.algorithm.log_debug(f"Added {needed_count} defensive negative return assets")
+                        self.algorithm.log_debug(f"Added {needed_count} defensive negative return assets", log_type="portfolio")
             
             else:
                 # 如果没有正收益标的，选择损失最小的几个
                 if np.any(acceptable_negative_mask):
                     selected_mask = acceptable_negative_mask.copy()
-                    self.algorithm.log_debug("No positive returns available, using acceptable negative returns")
+                    self.algorithm.log_debug("No positive returns available, using acceptable negative returns", log_type="portfolio")
                 else:
                     # 极端情况：选择损失最小的前几个标的
                     sorted_indices = np.argsort(-expected_returns)  # 从高到低排序
                     selected_mask = np.zeros(len(expected_returns), dtype=bool)
                     num_to_select = min(5, len(expected_returns))  # 最多选择5个
                     selected_mask[sorted_indices[:num_to_select]] = True
-                    self.algorithm.log_debug(f"Extreme case: selected top {num_to_select} assets with smallest losses")
+                    self.algorithm.log_debug(f"Extreme case: selected top {num_to_select} assets with smallest losses", log_type="portfolio")
             
             # 标记需要应用防御性现金管理
             self._all_negative_scenario = True
@@ -428,22 +428,22 @@ class PortfolioOptimizer:
                 self.algorithm._market_volatility = volatility_estimate
                 self.algorithm._negative_ratio = negative_ratio
                 
-                self.algorithm.log_debug("Defensive strategy applied:")
-                self.algorithm.log_debug(f"  Original assets: {len(symbols)}")
-                self.algorithm.log_debug(f"  Filtered assets: {len(filtered_symbols)}")
-                self.algorithm.log_debug(f"  Positive returns: {positive_count}")
-                self.algorithm.log_debug(f"  Negative returns: {negative_count}")
-                self.algorithm.log_debug(f"  Average expected return: {avg_return:.4f}")
+                self.algorithm.log_debug("Defensive strategy applied:", log_type="portfolio")
+                self.algorithm.log_debug(f"  Original assets: {len(symbols)}", log_type="portfolio")
+                self.algorithm.log_debug(f"  Filtered assets: {len(filtered_symbols)}", log_type="portfolio")
+                self.algorithm.log_debug(f"  Positive returns: {positive_count}", log_type="portfolio")
+                self.algorithm.log_debug(f"  Negative returns: {negative_count}", log_type="portfolio")
+                self.algorithm.log_debug(f"  Average expected return: {avg_return:.4f}", log_type="portfolio")
                 
                 return filtered_returns, filtered_cov, filtered_symbols
             
             else:
                 # 如果筛选后没有标的剩余，返回原始数据但发出警告
-                self.algorithm.log_debug("⚠️  Defensive strategy filtered out all assets - using original data")
+                self.algorithm.log_debug("⚠️  Defensive strategy filtered out all assets - using original data", log_type="portfolio")
                 return expected_returns, covariance_matrix, symbols
                 
         except Exception as e:
-            self.algorithm.log_debug(f"Error in defensive strategy: {e}")
+            self.algorithm.log_debug(f"Error in defensive strategy: {e}", log_type="portfolio")
             # 出错时返回原始数据
             return expected_returns, covariance_matrix, symbols
     
@@ -473,20 +473,20 @@ class PortfolioOptimizer:
             target_equity_ratio = self._calculate_dynamic_equity_ratio(weights, symbols)
             
             # 6. 应用股票仓位比例 - 修复：确保权重正确记录和应用
-            self.algorithm.log_debug(f"应用股票仓位比例: {target_equity_ratio:.2%}")
+            self.algorithm.log_debug(f"应用股票仓位比例: {target_equity_ratio:.2%}", log_type="portfolio")
             
             # 正确应用仓位比例：保持股票间相对权重，但缩放总权重
             if target_equity_ratio > 0:
                 constrained_weights = constrained_weights * target_equity_ratio
-                self.algorithm.log_debug(f"应用仓位比例后总权重: {np.sum(constrained_weights):.2%}")
+                self.algorithm.log_debug(f"应用仓位比例后总权重: {np.sum(constrained_weights):.2%}", log_type="portfolio")
             else:
                 # 如果目标股票仓位为0，清空所有权重
                 constrained_weights = np.zeros_like(constrained_weights)
-                self.algorithm.log_debug("目标股票仓位为0%，清空所有权重")
+                self.algorithm.log_debug("目标股票仓位为0%，清空所有权重", log_type="portfolio")
         
         # 7. 最终检查权重分布
         n_nonzero = np.sum(constrained_weights > 0.001)  # 计算有效持仓数量
-        self.algorithm.log_debug(f"约束后: {n_nonzero}只股票, 总权重: {np.sum(constrained_weights):.2%}")
+        self.algorithm.log_debug(f"约束后: {n_nonzero}只股票, 总权重: {np.sum(constrained_weights):.2%}", log_type="portfolio")
         
         return constrained_weights
 
@@ -570,15 +570,15 @@ class PortfolioOptimizer:
         
         # 强制等权重策略优先
         if self.config.PORTFOLIO_CONFIG.get('force_equal_weights', False):
-            self.algorithm.log_debug(f"应用强制等权重策略: {target_size}只股票")
+            self.algorithm.log_debug(f"应用强制等权重策略: {target_size}只股票", log_type="portfolio")
             # 选择权重最高的N只股票进行等权重分配
             top_indices = np.argsort(weights)[-target_size:]
             final_symbols = [symbols[i] for i in top_indices]
             final_weights = np.ones(target_size) / target_size
             
-            self.algorithm.log_debug(f"等权重组合: {len(final_symbols)}只股票，每只{1/target_size:.1%}")
+            self.algorithm.log_debug(f"等权重组合: {len(final_symbols)}只股票，每只{1/target_size:.1%}", log_type="portfolio")
             for symbol in final_symbols:
-                self.algorithm.log_debug(f"  {symbol}: {1/target_size:.1%}")
+                self.algorithm.log_debug(f"  {symbol}: {1/target_size:.1%}", log_type="portfolio")
             
             return final_weights, final_symbols
         
@@ -593,7 +593,7 @@ class PortfolioOptimizer:
             valid_mask = np.zeros(len(weights), dtype=bool)
             valid_mask[top_indices] = True
             n_valid = top_n
-            self.algorithm.log_debug(f"筛选不足，采用Top-{n_valid}策略")
+            self.algorithm.log_debug(f"筛选不足，采用Top-{n_valid}策略", log_type="portfolio")
         
         # 如果筛选结果太多，限制数量
         elif n_valid > max_size:
@@ -604,7 +604,7 @@ class PortfolioOptimizer:
             valid_mask = np.zeros(len(weights), dtype=bool)
             valid_mask[sorted_indices[:max_size]] = True
             n_valid = max_size
-            self.algorithm.log_debug(f"限制至{n_valid}只股票")
+            self.algorithm.log_debug(f"限制至{n_valid}只股票", log_type="portfolio")
         
         # 提取最终的股票和权重
         final_symbols = [symbols[i] for i in range(len(symbols)) if valid_mask[i]]
@@ -631,14 +631,14 @@ class PortfolioOptimizer:
                     final_weights = np.zeros_like(final_weights)
             else:
                 # 传统模式：权重总和归一化为1.0
-                final_weights = final_weights / np.sum(final_weights)
+            final_weights = final_weights / np.sum(final_weights)
                 self.algorithm.log_debug("传统模式权重归一化", log_type="portfolio")
             
-            self.algorithm.log_debug(f"最终组合: {len(final_symbols)}只股票, 总权重: {np.sum(final_weights):.2f}")
+            self.algorithm.log_debug(f"最终组合: {len(final_symbols)}只股票, 总权重: {np.sum(final_weights):.2f}", log_type="portfolio")
             for symbol, weight in zip(final_symbols, final_weights):
-                self.algorithm.log_debug(f"  {symbol}: {weight:.1%}")
+                self.algorithm.log_debug(f"  {symbol}: {weight:.1%}", log_type="portfolio")
         else:
-            self.algorithm.log_debug("警告: 没有股票被选中")
+            self.algorithm.log_debug("警告: 没有股票被选中", log_type="portfolio")
         
         return final_weights, final_symbols
     
@@ -664,13 +664,13 @@ class PortfolioOptimizer:
                 # 再次确保权重限制
                 adjusted_weights = np.clip(adjusted_weights, min_weight, max_weight)
                 
-                self.algorithm.log_debug(f"多元化调整: 偏好={diversification_pref:.1%}, 理想等权重={equal_weight:.2%}")
+                self.algorithm.log_debug(f"多元化调整: 偏好={diversification_pref:.1%}, 理想等权重={equal_weight:.2%}", log_type="portfolio")
                 return adjusted_weights
             
             return weights
             
         except Exception as e:
-            self.algorithm.log_debug(f"多元化重平衡错误: {e}")
+            self.algorithm.log_debug(f"多元化重平衡错误: {e}", log_type="portfolio")
             return weights
     
     def get_last_decision_factors(self):

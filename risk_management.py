@@ -850,9 +850,9 @@ class VIXMonitor:
         # 确保VIX数据已经添加到算法中
         try:
             self.algorithm.AddIndex(self.vix_symbol, Resolution.Daily)
-            self.algorithm.Debug("VIX指数已添加到数据源")
+            self.algorithm.log_debug("VIX指数已添加到数据源", log_type="risk")
         except Exception as e:
-            self.algorithm.Debug(f"添加VIX指数时出错: {e}")
+            self.algorithm.log_debug(f"添加VIX指数时出错: {e}", log_type="risk")
     
     def update_vix_data(self, current_time):
         """更新VIX数据并分析市场风险状态"""
@@ -860,7 +860,7 @@ class VIXMonitor:
             # 获取VIX历史数据
             vix_data = self._get_vix_historical_data()
             if vix_data is None or len(vix_data) < 2:
-                self.algorithm.Debug("VIX数据不足，无法进行风险分析")
+                self.algorithm.log_debug("VIX数据不足，无法进行风险分析", log_type="risk")
                 return self._get_default_risk_state()
             
             # 更新VIX历史记录
@@ -881,7 +881,7 @@ class VIXMonitor:
             return risk_state
             
         except Exception as e:
-            self.algorithm.Debug(f"VIX监控更新出错: {e}")
+            self.algorithm.log_debug(f"VIX监控更新出错: {e}", log_type="risk")
             return self._get_default_risk_state()
     
     def _get_vix_historical_data(self):
@@ -894,13 +894,13 @@ class VIXMonitor:
             self.algorithm.log_debug(f"[VIX历史] 数据长度: {len(history_list)}, 最近5天: {[x.Close for x in history_list[-5:]] if len(history_list)>=5 else [x.Close for x in history_list]}", log_type="risk")
             if len(history_list) == 0:
                 # 如果无法获取VIX数据，尝试使用替代方法
-                self.algorithm.Debug("无法获取VIX数据，使用市场波动率估算")
+                self.algorithm.log_debug("无法获取VIX数据，使用市场波动率估算", log_type="risk")
                 return self._estimate_market_volatility()
             # 提取VIX收盘价
             vix_values = [x.Close for x in history_list]
             return vix_values
         except Exception as e:
-            self.algorithm.Debug(f"获取VIX数据出错: {e}")
+            self.algorithm.log_debug(f"获取VIX数据出错: {e}", log_type="risk")
             return None
     
     def _estimate_market_volatility(self):
@@ -930,11 +930,11 @@ class VIXMonitor:
                 estimated_value = max(5, base_vix + variation)
                 vix_estimates.append(estimated_value)
             
-            self.algorithm.Debug(f"使用SPY估算的VIX值: {base_vix:.2f}")
+            self.algorithm.log_debug(f"使用SPY估算的VIX值: {base_vix:.2f}", log_type="risk")
             return vix_estimates
             
         except Exception as e:
-            self.algorithm.Debug(f"估算市场波动率出错: {e}")
+            self.algorithm.log_debug(f"估算市场波动率出错: {e}", log_type="risk")
             return None
     
     def _update_vix_history(self, vix_data):
@@ -1015,7 +1015,7 @@ class VIXMonitor:
             if vix_change_rate > rapid_rise_threshold:
                 risk_state['defense_mode'] = True
                 risk_state['risk_level'] = 'elevated'
-                self.algorithm.Debug(f"VIX快速上升触发防御模式: {vix_change_rate:.2%}")
+                self.algorithm.log_debug(f"VIX快速上升触发防御模式: {vix_change_rate:.2%}", log_type="risk")
             
             # 检查VIX极端水平
             extreme_level = self.config.RISK_CONFIG['vix_extreme_level']
@@ -1029,8 +1029,8 @@ class VIXMonitor:
                 risk_state['hedge_allocation'] = self.config.RISK_CONFIG['vix_extreme_hedging_allocation']
                 
                 cash_ratio = 1.0 - risk_state['max_equity_ratio']
-                self.algorithm.Debug(f"VIX极端水平触发最小仓位模式: VIX={current_vix:.2f}")
-                self.algorithm.Debug(f"极端防御模式: 股票仓位{risk_state['max_equity_ratio']:.1%}, 现金比例{cash_ratio:.1%}, 对冲分配{risk_state['hedge_allocation']:.1%}")
+                self.algorithm.log_debug(f"VIX极端水平触发最小仓位模式: VIX={current_vix:.2f}", log_type="risk")
+                self.algorithm.log_debug(f"极端防御模式: 股票仓位{risk_state['max_equity_ratio']:.1%}, 现金比例{cash_ratio:.1%}, 对冲分配{risk_state['hedge_allocation']:.1%}", log_type="risk")
             
             elif risk_state['defense_mode']:
                 # 防御模式但非极端情况
@@ -1042,7 +1042,7 @@ class VIXMonitor:
             normalization_threshold = self.config.RISK_CONFIG['vix_normalization_threshold']
             if current_vix < normalization_threshold and vix_change_rate < 0.05:
                 if self._defense_mode_active or self._extreme_mode_active:
-                    self.algorithm.Debug(f"VIX正常化，退出防御模式: VIX={current_vix:.2f}")
+                    self.algorithm.log_debug(f"VIX正常化，退出防御模式: VIX={current_vix:.2f}", log_type="risk")
                     risk_state['defense_mode'] = False
                     risk_state['extreme_mode'] = False
                     risk_state['risk_level'] = 'normal'
@@ -1075,21 +1075,21 @@ class VIXMonitor:
         risk_level = risk_state['risk_level']
         
         if risk_level != 'normal':
-            self.algorithm.Debug(f"=== VIX风险监控 ===")
-            self.algorithm.Debug(f"当前VIX: {current_vix:.2f}")
-            self.algorithm.Debug(f"VIX变化率: {vix_change_rate:.2%}")
-            self.algorithm.Debug(f"风险等级: {risk_level}")
+            self.algorithm.log_debug(f"=== VIX风险监控 ===", log_type="risk")
+            self.algorithm.log_debug(f"当前VIX: {current_vix:.2f}", log_type="risk")
+            self.algorithm.log_debug(f"VIX变化率: {vix_change_rate:.2%}", log_type="risk")
+            self.algorithm.log_debug(f"风险等级: {risk_level}", log_type="risk")
             
             if risk_state.get('recovery_mode', False):
-                self.algorithm.Debug(f"恢复模式: True")
-                self.algorithm.Debug(f"恢复速度: {risk_state.get('recovery_speed', 'gradual')}")
-                self.algorithm.Debug(f"恢复进度: {risk_state.get('recovery_progress', 0):.1%}")
+                self.algorithm.log_debug(f"恢复模式: True", log_type="risk")
+                self.algorithm.log_debug(f"恢复速度: {risk_state.get('recovery_speed', 'gradual')}", log_type="risk")
+                self.algorithm.log_debug(f"恢复进度: {risk_state.get('recovery_progress', 0):.1%}", log_type="risk")
             else:
-                self.algorithm.Debug(f"防御模式: {risk_state['defense_mode']}")
-                self.algorithm.Debug(f"极端模式: {risk_state['extreme_mode']}")
+                self.algorithm.log_debug(f"防御模式: {risk_state['defense_mode']}", log_type="risk")
+                self.algorithm.log_debug(f"极端模式: {risk_state['extreme_mode']}", log_type="risk")
                 
-            self.algorithm.Debug(f"最大股票仓位: {risk_state['max_equity_ratio']:.1%}")
-            self.algorithm.Debug(f"对冲分配: {risk_state['hedge_allocation']:.1%}")
+            self.algorithm.log_debug(f"最大股票仓位: {risk_state['max_equity_ratio']:.1%}", log_type="risk")
+            self.algorithm.log_debug(f"对冲分配: {risk_state['hedge_allocation']:.1%}", log_type="risk")
     
     def get_hedging_recommendations(self, risk_state):
         """获取对冲建议"""
@@ -1123,8 +1123,8 @@ class VIXMonitor:
     def _initiate_recovery_mode(self, risk_state, current_vix, vix_change_rate):
         """启动VIX恢复模式"""
         try:
-            self.algorithm.Debug(f"=== 启动VIX恢复模式 ===")
-            self.algorithm.Debug(f"当前VIX: {current_vix:.2f}, 变化率: {vix_change_rate:.2%}")
+            self.algorithm.log_debug(f"=== 启动VIX恢复模式 ===", log_type="risk")
+            self.algorithm.log_debug(f"当前VIX: {current_vix:.2f}, 变化率: {vix_change_rate:.2%}", log_type="risk")
             
             # 设置恢复模式状态
             risk_state['recovery_mode'] = True
@@ -1138,7 +1138,7 @@ class VIXMonitor:
                 else:
                     self._recovery_start_equity_ratio = 0.4  # 防御模式的典型仓位
                 
-                self.algorithm.Debug(f"恢复起始股票仓位: {self._recovery_start_equity_ratio:.1%}")
+                self.algorithm.log_debug(f"恢复起始股票仓位: {self._recovery_start_equity_ratio:.1%}", log_type="risk")
             
             # 确定恢复速度
             quick_recovery_threshold = self.config.RISK_CONFIG['vix_quick_recovery_threshold']
@@ -1152,7 +1152,7 @@ class VIXMonitor:
             return risk_state
             
         except Exception as e:
-            self.algorithm.Debug(f"启动恢复模式出错: {e}")
+            self.algorithm.log_debug(f"启动恢复模式出错: {e}", log_type="risk")
             return risk_state
     
     def _evaluate_recovery_progress(self, risk_state, current_vix, vix_change_rate):
@@ -1164,14 +1164,14 @@ class VIXMonitor:
             # 检查是否应该切换到快速恢复
             quick_recovery_threshold = self.config.RISK_CONFIG['vix_quick_recovery_threshold']
             if current_vix <= quick_recovery_threshold and risk_state.get('recovery_speed') != 'quick':
-                self.algorithm.Debug(f"VIX降至{current_vix:.2f}，切换到快速恢复模式")
+                self.algorithm.log_debug(f"VIX降至{current_vix:.2f}，切换到快速恢复模式", log_type="risk")
                 risk_state['recovery_speed'] = 'quick'
                 return self._apply_quick_recovery(risk_state, current_vix)
             
             # 检查是否应该完全退出恢复模式
             normalization_threshold = self.config.RISK_CONFIG['vix_normalization_threshold']
             if current_vix < normalization_threshold and abs(vix_change_rate) < 0.05:
-                self.algorithm.Debug(f"VIX完全正常化，退出恢复模式: VIX={current_vix:.2f}")
+                self.algorithm.log_debug(f"VIX完全正常化，退出恢复模式: VIX={current_vix:.2f}", log_type="risk")
                 return self._complete_recovery(risk_state)
             
             # 根据当前恢复速度模式继续恢复
@@ -1181,7 +1181,7 @@ class VIXMonitor:
                 return self._apply_gradual_recovery(risk_state, current_vix, vix_change_rate)
                 
         except Exception as e:
-            self.algorithm.Debug(f"评估恢复进度出错: {e}")
+            self.algorithm.log_debug(f"评估恢复进度出错: {e}", log_type="risk")
             return risk_state
     
     def _apply_gradual_recovery(self, risk_state, current_vix, vix_change_rate):
@@ -1216,12 +1216,12 @@ class VIXMonitor:
                 base_hedge = self.config.RISK_CONFIG['vix_hedging_allocation']
             risk_state['hedge_allocation'] = max(0, base_hedge * (1 - self._recovery_progress * hedge_reduction))
             
-            self.algorithm.Debug(f"逐步恢复 - 股票仓位: {current_equity_ratio:.1%}, 进度: {self._recovery_progress:.1%}, 对冲: {risk_state['hedge_allocation']:.1%}")
+            self.algorithm.log_debug(f"逐步恢复 - 股票仓位: {current_equity_ratio:.1%}, 进度: {self._recovery_progress:.1%}, 对冲: {risk_state['hedge_allocation']:.1%}", log_type="risk")
             
             return risk_state
             
         except Exception as e:
-            self.algorithm.Debug(f"逐步恢复出错: {e}")
+            self.algorithm.log_debug(f"逐步恢复出错: {e}", log_type="risk")
             return risk_state
     
     def _apply_quick_recovery(self, risk_state, current_vix):
@@ -1235,18 +1235,18 @@ class VIXMonitor:
             risk_state['hedge_allocation'] = 0.05  # 保留少量对冲
             risk_state['recovery_progress'] = 0.9  # 快速恢复进度设为90%
             
-            self.algorithm.Debug(f"快速恢复 - VIX降至{current_vix:.2f}，股票仓位恢复到{risk_state['max_equity_ratio']:.1%}")
+            self.algorithm.log_debug(f"快速恢复 - VIX降至{current_vix:.2f}，股票仓位恢复到{risk_state['max_equity_ratio']:.1%}", log_type="risk")
             
             return risk_state
             
         except Exception as e:
-            self.algorithm.Debug(f"快速恢复出错: {e}")
+            self.algorithm.log_debug(f"快速恢复出错: {e}", log_type="risk")
             return risk_state
     
     def _complete_recovery(self, risk_state):
         """完成恢复，返回正常模式"""
         try:
-            self.algorithm.Debug(f"=== 完成VIX恢复，回到正常模式 ===")
+            self.algorithm.log_debug(f"=== 完成VIX恢复，回到正常模式 ===", log_type="risk")
             
             # 重置所有恢复状态
             risk_state['recovery_mode'] = False
@@ -1265,7 +1265,7 @@ class VIXMonitor:
             return risk_state
             
         except Exception as e:
-            self.algorithm.Debug(f"完成恢复出错: {e}")
+            self.algorithm.log_debug(f"完成恢复出错: {e}", log_type="risk")
             return risk_state
 
 class HedgingManager:
@@ -1280,9 +1280,9 @@ class HedgingManager:
         for symbol in self.hedging_symbols:
             try:
                 self.algorithm.AddEquity(symbol, Resolution.Daily)
-                self.algorithm.Debug(f"对冲产品 {symbol} 已添加到数据源")
+                self.algorithm.log_debug(f"对冲产品 {symbol} 已添加到数据源", log_type="risk")
             except Exception as e:
-                self.algorithm.Debug(f"添加对冲产品 {symbol} 时出错: {e}")
+                self.algorithm.log_debug(f"添加对冲产品 {symbol} 时出错: {e}", log_type="risk")
     
     def calculate_hedging_allocation(self, vix_risk_state, regular_symbols):
         """计算对冲产品的分配（支持恢复模式）"""
@@ -1305,7 +1305,7 @@ class HedgingManager:
                     available_hedging_symbols.append(symbol)
             
             if not available_hedging_symbols:
-                self.algorithm.Debug("没有可用的对冲产品")
+                self.algorithm.log_debug("没有可用的对冲产品", log_type="risk")
                 return {}
             
             # 分配对冲比例
@@ -1316,14 +1316,14 @@ class HedgingManager:
                 # 根据模式记录不同的日志
                 if vix_risk_state.get('recovery_mode', False):
                     recovery_speed = vix_risk_state.get('recovery_speed', 'gradual')
-                    self.algorithm.Debug(f"恢复模式({recovery_speed})下SQQQ对冲比例: {hedge_allocation:.1%}")
+                    self.algorithm.log_debug(f"恢复模式({recovery_speed})下SQQQ对冲比例: {hedge_allocation:.1%}", log_type="risk")
                 else:
-                    self.algorithm.Debug(f"防御模式下SQQQ对冲比例: {hedge_allocation:.1%}")
+                    self.algorithm.log_debug(f"防御模式下SQQQ对冲比例: {hedge_allocation:.1%}", log_type="risk")
             
             return hedging_weights
             
         except Exception as e:
-            self.algorithm.Debug(f"计算对冲分配出错: {e}")
+            self.algorithm.log_debug(f"计算对冲分配出错: {e}", log_type="risk")
             return {}
     
     def _is_hedging_symbol_tradable(self, symbol):
@@ -1349,7 +1349,7 @@ class HedgingManager:
             return False
             
         except Exception as e:
-            self.algorithm.Debug(f"检查对冲产品 {symbol} 可交易性出错: {e}")
+            self.algorithm.log_debug(f"检查对冲产品 {symbol} 可交易性出错: {e}", log_type="risk")
             return False
     
     def integrate_hedging_with_portfolio(self, regular_weights, regular_symbols, vix_risk_state):
@@ -1366,7 +1366,7 @@ class HedgingManager:
             # 调整常规投资组合权重
             remaining_weight = 1.0 - total_hedge_weight
             if remaining_weight <= 0:
-                self.algorithm.Debug("对冲分配过多，使用最小常规仓位")
+                self.algorithm.log_debug("对冲分配过多，使用最小常规仓位", log_type="risk")
                 remaining_weight = 0.1
                 total_hedge_weight = 0.9
                 # 重新调整对冲权重
@@ -1386,21 +1386,21 @@ class HedgingManager:
                     symbol_obj = Symbol.Create(symbol_str, SecurityType.Equity, Market.USA)
                     hedging_symbols.append(symbol_obj)
                 except Exception as e:
-                    self.algorithm.Debug(f"创建对冲符号 {symbol_str} 出错: {e}")
+                    self.algorithm.log_debug(f"创建对冲符号 {symbol_str} 出错: {e}", log_type="risk")
                     # 如果创建失败，尝试直接使用字符串
                     hedging_symbols.append(symbol_str)
             
             all_symbols = list(regular_symbols) + hedging_symbols
             
-            self.algorithm.Debug(f"整合对冲产品后的投资组合:")
-            self.algorithm.Debug(f"  常规投资比例: {remaining_weight:.1%}")
-            self.algorithm.Debug(f"  对冲产品比例: {total_hedge_weight:.1%}")
-            self.algorithm.Debug(f"  对冲产品: {list(hedging_weights.keys())}")
+            self.algorithm.log_debug(f"整合对冲产品后的投资组合:", log_type="risk")
+            self.algorithm.log_debug(f"  常规投资比例: {remaining_weight:.1%}", log_type="risk")
+            self.algorithm.log_debug(f"  对冲产品比例: {total_hedge_weight:.1%}", log_type="risk")
+            self.algorithm.log_debug(f"  对冲产品: {list(hedging_weights.keys())}", log_type="risk")
             
             return all_weights, all_symbols
             
         except Exception as e:
-            self.algorithm.Debug(f"整合对冲产品出错: {e}")
+            self.algorithm.log_debug(f"整合对冲产品出错: {e}", log_type="risk")
             return regular_weights, regular_symbols
     
     def get_hedging_status(self):
@@ -1419,7 +1419,7 @@ class HedgingManager:
             return hedging_status
             
         except Exception as e:
-            self.algorithm.Debug(f"获取对冲状态出错: {e}")
+            self.algorithm.log_debug(f"获取对冲状态出错: {e}", log_type="risk")
             return {}
     
     def log_hedging_summary(self, vix_risk_state):
@@ -1430,9 +1430,9 @@ class HedgingManager:
         try:
             hedging_status = self.get_hedging_status()
             if hedging_status:
-                self.algorithm.Debug("=== 对冲产品状态 ===")
+                self.algorithm.log_debug("=== 对冲产品状态 ===", log_type="risk")
                 for symbol, status in hedging_status.items():
-                    self.algorithm.Debug(f"{symbol}: 数量={status['quantity']}, 价值=${status['holdings_value']:.0f}, 权重={status['weight']:.1%}")
+                    self.algorithm.log_debug(f"{symbol}: 数量={status['quantity']}, 价值=${status['holdings_value']:.0f}, 权重={status['weight']:.1%}", log_type="risk")
             
         except Exception as e:
-            self.algorithm.Debug(f"记录对冲摘要出错: {e}") 
+            self.algorithm.log_debug(f"记录对冲摘要出错: {e}", log_type="risk")

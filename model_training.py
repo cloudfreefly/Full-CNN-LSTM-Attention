@@ -26,7 +26,7 @@ def fix_log_debug_calls(lines):
         m = pattern.search(line)
         if m:
             msg = m.group(1)
-            newline = line.replace(m.group(0), f"self.algorithm.log_debug('training', {msg})")
+            newline = line.replace(m.group(0), f"self.algorithm.log_debug('training', {msg})", log_type="training")
             fixed.append(newline)
         else:
             fixed.append(line)
@@ -569,31 +569,31 @@ class ModelTrainer:
     def train_all_models(self):
         """训练所有股票的模型"""
         try:
-            self.algorithm.log_debug('training', "=== Starting model training for all symbols ===")
+            self.algorithm.log_debug('training', "=== Starting model training for all symbols ===", log_type="training")
             
             # 清理现有模型
             try:
                 self._cleanup_models()
-                self.algorithm.log_debug('training', "Cleaned up existing models")
+                self.algorithm.log_debug('training', "Cleaned up existing models", log_type="training")
             except Exception as cleanup_error:
-                self.algorithm.log_debug('training', f"Error during model cleanup: {cleanup_error}")
+                self.algorithm.log_debug('training', f"Error during model cleanup: {cleanup_error}", log_type="training")
             
             training_results = {}
             successful_symbols = []
             
             total_symbols = len(self.algorithm.config.SYMBOLS)
-            self.algorithm.log_debug('training', f"Training models for {total_symbols} symbols: {self.algorithm.config.SYMBOLS}")
+            self.algorithm.log_debug('training', f"Training models for {total_symbols} symbols: {self.algorithm.config.SYMBOLS}", log_type="training")
             
             for i, symbol in enumerate(self.algorithm.config.SYMBOLS, 1):
                 try:
-                    self.algorithm.log_debug('training', f"Training progress: {i}/{total_symbols} - Processing {symbol}")
+                    self.algorithm.log_debug('training', f"Training progress: {i}/{total_symbols} - Processing {symbol}", log_type="training")
                     
                     # 检查内存和时间限制
                     if hasattr(self.algorithm, 'performance_metrics'):
                         total_training_time = self.algorithm.performance_metrics.get('total_training_time', 0)
                         max_time = self.config.TRAINING_CONFIG.get('max_training_time', 300)
                         if total_training_time > max_time:
-                            self.algorithm.log_debug('training', f"Training time limit exceeded ({total_training_time}s > {max_time}s), stopping")
+                            self.algorithm.log_debug('training', f"Training time limit exceeded ({total_training_time}s > {max_time}s), stopping", log_type="training")
                             break
                     
                     model_result = self.train_single_model(symbol)
@@ -601,28 +601,28 @@ class ModelTrainer:
                     if model_result:
                         training_results[symbol] = model_result
                         successful_symbols.append(symbol)
-                        self.algorithm.log_debug('training', f"✓ Successfully trained model for {symbol}")
+                        self.algorithm.log_debug('training', f"✓ Successfully trained model for {symbol}", log_type="training")
                     else:
-                        self.algorithm.log_debug('training', f"✗ Failed to train model for {symbol}")
+                        self.algorithm.log_debug('training', f"✗ Failed to train model for {symbol}", log_type="training")
                         
                 except Exception as symbol_error:
-                    self.algorithm.log_debug('training', f"ERROR training {symbol}: {str(symbol_error)}")
-                    self.algorithm.log_debug('training', f"Symbol error type: {type(symbol_error).__name__}")
+                    self.algorithm.log_debug('training', f"ERROR training {symbol}: {str(symbol_error)}", log_type="training")
+                    self.algorithm.log_debug('training', f"Symbol error type: {type(symbol_error).__name__}", log_type="training")
                     import traceback
-                    self.algorithm.log_debug('training', f"Symbol error traceback: {traceback.format_exc()}")
+                    self.algorithm.log_debug('training', f"Symbol error traceback: {traceback.format_exc()}", log_type="training")
                     continue
             
-            self.algorithm.log_debug('training', f"=== Training completed ===")
-            self.algorithm.log_debug('training', f"Successfully trained: {len(successful_symbols)}/{total_symbols} models")
-            self.algorithm.log_debug('training', f"Successful symbols: {successful_symbols}")
+            self.algorithm.log_debug('training', f"=== Training completed ===", log_type="training")
+            self.algorithm.log_debug('training', f"Successfully trained: {len(successful_symbols)}/{total_symbols} models", log_type="training")
+            self.algorithm.log_debug('training', f"Successful symbols: {successful_symbols}", log_type="training")
             
             return training_results, successful_symbols
             
         except Exception as e:
-            self.algorithm.log_debug('training', f"CRITICAL ERROR in train_all_models: {str(e)}")
-            self.algorithm.log_debug('training', f"Train all models error type: {type(e).__name__}")
+            self.algorithm.log_debug('training', f"CRITICAL ERROR in train_all_models: {str(e)}", log_type="training")
+            self.algorithm.log_debug('training', f"Train all models error type: {type(e).__name__}", log_type="training")
             import traceback
-            self.algorithm.log_debug('training', f"Train all models error traceback: {traceback.format_exc()}")
+            self.algorithm.log_debug('training', f"Train all models error traceback: {traceback.format_exc()}", log_type="training")
             return {}, []
 
     def train_single_model(self, symbol):
@@ -630,43 +630,43 @@ class ModelTrainer:
         start_time = time.time()
         
         try:
-            self.algorithm.log_debug('training', f"--- Training model for {symbol} ---")
+            self.algorithm.log_debug('training', f"--- Training model for {symbol} ---", log_type="training")
             
             # 准备训练数据
-            self.algorithm.log_debug('training', f"Step 1: Preparing training data for {symbol}")
+            self.algorithm.log_debug('training', f"Step 1: Preparing training data for {symbol}", log_type="training")
             try:
                 training_data = self.multi_horizon_model.prepare_training_data(
                     self.data_processor, symbol, self.config.PREDICTION_HORIZONS
                 )
                 
                 if training_data is None:
-                    self.algorithm.log_debug('training', f"No training data available for {symbol}")
+                    self.algorithm.log_debug('training', f"No training data available for {symbol}", log_type="training")
                     return None
                     
                 X, y_dict, effective_lookback = training_data
-                self.algorithm.log_debug('training', f"Training data prepared for {symbol}:")
-                self.algorithm.log_debug('training', f"  X shape: {X.shape}")
-                self.algorithm.log_debug('training', f"  y_dict keys: {list(y_dict.keys()) if y_dict else 'None'}")
-                self.algorithm.log_debug('training', f"  Effective lookback: {effective_lookback}")
+                self.algorithm.log_debug('training', f"Training data prepared for {symbol}:", log_type="training")
+                self.algorithm.log_debug('training', f"  X shape: {X.shape}", log_type="training")
+                self.algorithm.log_debug('training', f"  y_dict keys: {list(y_dict.keys()) if y_dict else 'None'}", log_type="training")
+                self.algorithm.log_debug('training', f"  Effective lookback: {effective_lookback}", log_type="training")
                 
             except Exception as data_error:
-                self.algorithm.log_debug('training', f"Error preparing training data for {symbol}: {data_error}")
+                self.algorithm.log_debug('training', f"Error preparing training data for {symbol}: {data_error}", log_type="training")
                 return None
             
             # 构建模型
-            self.algorithm.log_debug('training', f"Step 2: Building model for {symbol}")
+            self.algorithm.log_debug('training', f"Step 2: Building model for {symbol}", log_type="training")
             try:
                 model = self.multi_horizon_model.build_model(
                     (X.shape[1], X.shape[2]), 
                     self.config.PREDICTION_HORIZONS
                 )
-                self.algorithm.log_debug('training', f"Model built for {symbol}: {model.summary() if hasattr(model, 'summary') else 'Model object created'}")
+                self.algorithm.log_debug('training', f"Model built for {symbol}: {model.summary() if hasattr(model, 'summary') else 'Model object created'}", log_type="training")
             except Exception as build_error:
-                self.algorithm.log_debug('training', f"Error building model for {symbol}: {build_error}")
+                self.algorithm.log_debug('training', f"Error building model for {symbol}: {build_error}", log_type="training")
                 return None
             
             # 训练模型
-            self.algorithm.log_debug('training', f"Step 3: Training model for {symbol}")
+            self.algorithm.log_debug('training', f"Step 3: Training model for {symbol}", log_type="training")
             try:
                 # 准备训练目标
                 y_list = [y_dict[horizon] for horizon in self.config.PREDICTION_HORIZONS]
@@ -683,7 +683,7 @@ class ModelTrainer:
                 
                 # 训练模型
                 epochs = min(50, self.config.TRAINING_CONFIG.get('max_epochs', 50))
-                self.algorithm.log_debug('training', f"Starting training for {symbol} with {epochs} epochs")
+                self.algorithm.log_debug('training', f"Starting training for {symbol} with {epochs} epochs", log_type="training")
                 
                 history = model.fit(
                     X, y_list,
@@ -695,7 +695,7 @@ class ModelTrainer:
                 )
                 
                 training_time = time.time() - start_time
-                self.algorithm.log_debug('training', f"Training completed for {symbol} in {training_time:.2f}s")
+                self.algorithm.log_debug('training', f"Training completed for {symbol} in {training_time:.2f}s", log_type="training")
                 
                 # 存储模型和相关信息
                 model_info = {
@@ -709,21 +709,21 @@ class ModelTrainer:
                 # 同时存储在两个地方以保持兼容性
                 self.models[symbol] = model_info
                 self.multi_horizon_model.models[symbol] = model_info
-                self.algorithm.log_debug('training', f"Model stored for {symbol}, final loss: {model_info['final_loss']}")
+                self.algorithm.log_debug('training', f"Model stored for {symbol}, final loss: {model_info['final_loss']}", log_type="training")
                 
                 return model_info
                 
             except Exception as train_error:
-                self.algorithm.log_debug('training', f"Error during model training for {symbol}: {train_error}")
+                self.algorithm.log_debug('training', f"Error during model training for {symbol}: {train_error}", log_type="training")
                 import traceback
-                self.algorithm.log_debug('training', f"Training error traceback: {traceback.format_exc()}")
+                self.algorithm.log_debug('training', f"Training error traceback: {traceback.format_exc()}", log_type="training")
                 return None
                 
         except Exception as e:
-            self.algorithm.log_debug('training', f"CRITICAL ERROR in train_single_model for {symbol}: {str(e)}")
-            self.algorithm.log_debug('training', f"Single model error type: {type(e).__name__}")
+            self.algorithm.log_debug('training', f"CRITICAL ERROR in train_single_model for {symbol}: {str(e)}", log_type="training")
+            self.algorithm.log_debug('training', f"Single model error type: {type(e).__name__}", log_type="training")
             import traceback
-            self.algorithm.log_debug('training', f"Single model error traceback: {traceback.format_exc()}")
+            self.algorithm.log_debug('training', f"Single model error traceback: {traceback.format_exc()}", log_type="training")
             return None
     
     def _cleanup_models(self):
@@ -752,7 +752,7 @@ class ModelTrainer:
         self.multi_horizon_model.training_history = {}
         gc.collect()
         
-        self.algorithm.log_debug('training', "Model cleanup completed")
+        self.algorithm.log_debug('training', "Model cleanup completed", log_type="training")
     
     def get_trained_models(self):
         """获取训练好的模型字典"""
@@ -866,68 +866,68 @@ class ModelTrainer:
         start_time = time.time()
         
         try:
-            self.algorithm.log_debug('training', f"--- Predicting and optimizing model for {symbol} ---")
+            self.algorithm.log_debug('training', f"--- Predicting and optimizing model for {symbol} ---", log_type="training")
             
             # 准备预测数据
-            self.algorithm.log_debug('training', f"Step 1: Preparing prediction data for {symbol}")
+            self.algorithm.log_debug('training', f"Step 1: Preparing prediction data for {symbol}", log_type="training")
             try:
                 prediction_data = self.multi_horizon_model.prepare_training_data(
                     data_processor, symbol, self.config.PREDICTION_HORIZONS
                 )
                 
                 if prediction_data is None:
-                    self.algorithm.log_debug('training', f"No prediction data available for {symbol}")
+                    self.algorithm.log_debug('training', f"No prediction data available for {symbol}", log_type="training")
                     return None
                     
                 X, y_dict, effective_lookback = prediction_data
-                self.algorithm.log_debug('training', f"Prediction data prepared for {symbol}:")
-                self.algorithm.log_debug('training', f"  X shape: {X.shape}")
-                self.algorithm.log_debug('training', f"  y_dict keys: {list(y_dict.keys()) if y_dict else 'None'}")
-                self.algorithm.log_debug('training', f"  Effective lookback: {effective_lookback}")
+                self.algorithm.log_debug('training', f"Prediction data prepared for {symbol}:", log_type="training")
+                self.algorithm.log_debug('training', f"  X shape: {X.shape}", log_type="training")
+                self.algorithm.log_debug('training', f"  y_dict keys: {list(y_dict.keys()) if y_dict else 'None'}", log_type="training")
+                self.algorithm.log_debug('training', f"  Effective lookback: {effective_lookback}", log_type="training")
                 
             except Exception as data_error:
-                self.algorithm.log_debug('training', f"Error preparing prediction data for {symbol}: {data_error}")
+                self.algorithm.log_debug('training', f"Error preparing prediction data for {symbol}: {data_error}", log_type="training")
                 return None
             
             # 预测模型
-            self.algorithm.log_debug('training', f"Step 2: Predicting model for {symbol}")
+            self.algorithm.log_debug('training', f"Step 2: Predicting model for {symbol}", log_type="training")
             try:
                 model = self.multi_horizon_model.models[symbol]['model']
                 predicted_returns = model.predict(X)
-                self.algorithm.log_debug('training', f"Model prediction completed for {symbol}:")
-                self.algorithm.log_debug('training', f"  Predicted returns shape: {predicted_returns.shape}")
+                self.algorithm.log_debug('training', f"Model prediction completed for {symbol}:", log_type="training")
+                self.algorithm.log_debug('training', f"  Predicted returns shape: {predicted_returns.shape}", log_type="training")
             except Exception as predict_error:
-                self.algorithm.log_debug('training', f"Error predicting model for {symbol}: {predict_error}")
+                self.algorithm.log_debug('training', f"Error predicting model for {symbol}: {predict_error}", log_type="training")
                 return None
             
             # 处理预测结果
-            self.algorithm.log_debug('training', f"[模型预测] 每只股票预测收益: {predicted_returns}")
+            self.algorithm.log_debug('training', f"[模型预测] 每只股票预测收益: {predicted_returns}", log_type="training")
             if not predicted_returns or all(v is None or v == 0 for v in predicted_returns.values()):
-                self.algorithm.log_debug('training', "[模型预测] 所有预测无效，优化器将不会被调用")
+                self.algorithm.log_debug('training', "[模型预测] 所有预测无效，优化器将不会被调用", log_type="training")
             
             # 优化模型
-            self.algorithm.log_debug('training', f"Step 3: Optimizing model for {symbol}")
+            self.algorithm.log_debug('training', f"Step 3: Optimizing model for {symbol}", log_type="training")
             try:
                 # 实现优化逻辑
                 optimized_model = self.optimize_model(symbol, predicted_returns)
-                self.algorithm.log_debug('training', f"Model optimization completed for {symbol}:")
-                self.algorithm.log_debug('training', f"  Optimized model: {optimized_model}")
+                self.algorithm.log_debug('training', f"Model optimization completed for {symbol}:", log_type="training")
+                self.algorithm.log_debug('training', f"  Optimized model: {optimized_model}", log_type="training")
                 
                 # 存储优化后的模型
                 self.models[symbol]['optimized_model'] = optimized_model
-                self.algorithm.log_debug('training', f"Optimized model stored for {symbol}")
+                self.algorithm.log_debug('training', f"Optimized model stored for {symbol}", log_type="training")
                 
                 return optimized_model
                 
             except Exception as optimize_error:
-                self.algorithm.log_debug('training', f"Error optimizing model for {symbol}: {optimize_error}")
+                self.algorithm.log_debug('training', f"Error optimizing model for {symbol}: {optimize_error}", log_type="training")
                 return None
                 
         except Exception as e:
-            self.algorithm.log_debug('training', f"CRITICAL ERROR in predict_and_optimize for {symbol}: {str(e)}")
-            self.algorithm.log_debug('training', f"Predict and optimize error type: {type(e).__name__}")
+            self.algorithm.log_debug('training', f"CRITICAL ERROR in predict_and_optimize for {symbol}: {str(e)}", log_type="training")
+            self.algorithm.log_debug('training', f"Predict and optimize error type: {type(e).__name__}", log_type="training")
             import traceback
-            self.algorithm.log_debug('training', f"Predict and optimize error traceback: {traceback.format_exc()}")
+            self.algorithm.log_debug('training', f"Predict and optimize error traceback: {traceback.format_exc()}", log_type="training")
             return None
     
     def optimize_model(self, symbol, predicted_returns):

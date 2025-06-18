@@ -16,7 +16,7 @@ class SmartRebalancer:
         """执行智能再平衡"""
         try:
             if not self._ensure_current_data_available():
-                self.algorithm.log_debug("当前数据不可用，跳过再平衡")
+                self.algorithm.log_debug("当前数据不可用，跳过再平衡", log_type="trading")
                 return False
                 
             # 获取当前持仓
@@ -31,7 +31,7 @@ class SmartRebalancer:
                                                      target_holdings)
             
             if not trades:
-                self.algorithm.log_debug("无需进行交易")
+                self.algorithm.log_debug("无需进行交易", log_type="trading")
                 return True
                 
             # 执行交易
@@ -43,7 +43,7 @@ class SmartRebalancer:
             return success
             
         except Exception as e:
-            self.algorithm.log_debug(f"智能再平衡失败: {str(e)}")
+            self.algorithm.log_debug(f"智能再平衡失败: {str(e)}", log_type="trading")
             return False
     
     def _ensure_current_data_available(self):
@@ -52,13 +52,13 @@ class SmartRebalancer:
             # 检查是否有足够的现金或持仓
             total_portfolio_value = self.algorithm.Portfolio.TotalPortfolioValue
             if total_portfolio_value <= 0:
-                self.algorithm.log_debug("投资组合价值为零或负数")
+                self.algorithm.log_debug("投资组合价值为零或负数", log_type="trading")
                 return False
                 
             return True
             
         except Exception as e:
-            self.algorithm.log_debug(f"数据可用性检查失败: {str(e)}")
+            self.algorithm.log_debug(f"数据可用性检查失败: {str(e)}", log_type="trading")
             return False
     
     def _get_current_holdings(self):
@@ -85,7 +85,7 @@ class SmartRebalancer:
             return current_holdings
             
         except Exception as e:
-            self.algorithm.log_debug(f"获取当前持仓失败: {str(e)}")
+            self.algorithm.log_debug(f"获取当前持仓失败: {str(e)}", log_type="trading")
             return {}
     
     def _calculate_target_holdings(self, target_weights, 
@@ -102,9 +102,9 @@ class SmartRebalancer:
             if hasattr(self.algorithm, 'leverage_manager'):
                 try:
                     leverage_ratio = self.algorithm.leverage_manager.get_current_leverage_ratio()
-                    self.algorithm.log_debug(f"当前杠杆比率: {leverage_ratio:.2f}")
+                    self.algorithm.log_debug(f"当前杠杆比率: {leverage_ratio:.2f}", log_type="trading")
                 except Exception as e:
-                    self.algorithm.log_debug(f"获取杠杆比率失败: {str(e)}")
+                    self.algorithm.log_debug(f"获取杠杆比率失败: {str(e)}", log_type="trading")
             
             # 调整总投资金额（包含杠杆）
             total_investment = total_value * leverage_ratio
@@ -127,14 +127,14 @@ class SmartRebalancer:
                             'current_price': current_price
                         }
             
-            self.algorithm.log_debug(f"目标持仓计算完成，包含{len(target_holdings)}只股票")
+            self.algorithm.log_debug(f"目标持仓计算完成，包含{len(target_holdings)}只股票", log_type="trading")
             if leverage_ratio != 1.0:
-                self.algorithm.log_debug(f"使用杠杆{leverage_ratio:.2f}倍，总投资金额: ${total_investment:,.0f}")
+                self.algorithm.log_debug(f"使用杠杆{leverage_ratio:.2f}倍，总投资金额: ${total_investment:,.0f}", log_type="trading")
             
             return target_holdings
             
         except Exception as e:
-            self.algorithm.log_debug(f"计算目标持仓失败: {str(e)}")
+            self.algorithm.log_debug(f"计算目标持仓失败: {str(e)}", log_type="trading")
             return {}
     
     def get_current_price(self, symbol_str):
@@ -146,11 +146,11 @@ class SmartRebalancer:
             if security is not None:
                 return float(security.Price)
             else:
-                self.algorithm.log_debug(f"无法找到证券: {symbol_str}")
+                self.algorithm.log_debug(f"无法找到证券: {symbol_str}", log_type="trading")
                 return 0
                 
         except Exception as e:
-            self.algorithm.log_debug(f"获取{symbol_str}价格失败: {str(e)}")
+            self.algorithm.log_debug(f"获取{symbol_str}价格失败: {str(e)}", log_type="trading")
             return 0
     
     def _generate_trade_instructions(self, current_holdings, 
@@ -212,14 +212,14 @@ class SmartRebalancer:
             
             if trades:
                 total_trade_value = sum(trade['trade_value'] for trade in trades)
-                self.algorithm.log_debug(f"生成 {len(trades)} 个交易指令，总交易金额: ${total_trade_value:,.2f}")
+                self.algorithm.log_debug(f"生成 {len(trades)} 个交易指令，总交易金额: ${total_trade_value:,.2f}", log_type="trading")
             else:
-                self.algorithm.log_debug("无符合条件的交易指令生成")
+                self.algorithm.log_debug("无符合条件的交易指令生成", log_type="trading")
             
             return trades
             
         except Exception as e:
-            self.algorithm.log_debug(f"生成交易指令失败: {str(e)}")
+            self.algorithm.log_debug(f"生成交易指令失败: {str(e)}", log_type="trading")
             return []
     
     def _execute_trades(self, trades):
@@ -228,7 +228,7 @@ class SmartRebalancer:
             executed_trades = []
             total_trade_value = 0
             
-            self.algorithm.log_debug(f"=== 开始执行交易 - 共{len(trades)}个指令 ===")
+            self.algorithm.log_debug(f"=== 开始执行交易 - 共{len(trades)}个指令 ===", log_type="trading")
             
             for trade in trades:
                 try:
@@ -249,7 +249,7 @@ class SmartRebalancer:
                     elif action == 'LIQUIDATE':
                         order_ticket = self.algorithm.Liquidate(symbol)
                     else:
-                        self.algorithm.log_debug(f"未知交易动作: {action}")
+                        self.algorithm.log_debug(f"未知交易动作: {action}", log_type="trading")
                         continue
                     
                     if order_ticket:
@@ -269,36 +269,36 @@ class SmartRebalancer:
                         self.algorithm.log_debug(f"✅ 执行成功: {action} {symbol_str} "
                                                f"{quantity:,}股 @ ${price:.2f} = ${trade_value:,.2f}")
                     else:
-                        self.algorithm.log_debug(f"❌ 订单创建失败: {symbol_str}")
+                        self.algorithm.log_debug(f"❌ 订单创建失败: {symbol_str}", log_type="trading")
                         
                 except Exception as trade_error:
-                    self.algorithm.log_debug(f"❌ 交易执行异常 {trade['symbol']}: {str(trade_error)}")
+                    self.algorithm.log_debug(f"❌ 交易执行异常 {trade['symbol']}: {str(trade_error)}", log_type="trading")
                     continue
             
             # 交易执行总结
             if executed_trades:
-                self.algorithm.log_debug(f"=== 交易执行完成 ===")
-                self.algorithm.log_debug(f"成功执行: {len(executed_trades)}/{len(trades)} 个交易")
-                self.algorithm.log_debug(f"总交易金额: ${total_trade_value:,.2f}")
+                self.algorithm.log_debug(f"=== 交易执行完成 ===", log_type="trading")
+                self.algorithm.log_debug(f"成功执行: {len(executed_trades)}/{len(trades)} 个交易", log_type="trading")
+                self.algorithm.log_debug(f"总交易金额: ${total_trade_value:,.2f}", log_type="trading")
                 
                 # 估算交易成本（假设0.1%的交易成本）
                 estimated_cost = total_trade_value * 0.001
-                self.algorithm.log_debug(f"预估交易成本: ${estimated_cost:.2f} (0.1%)")
+                self.algorithm.log_debug(f"预估交易成本: ${estimated_cost:.2f} (0.1%)", log_type="trading")
                 
                 # 按动作分类统计
                 buy_count = sum(1 for t in executed_trades if t['action'] == 'BUY')
                 sell_count = sum(1 for t in executed_trades if t['action'] == 'SELL')
                 liquidate_count = sum(1 for t in executed_trades if t['action'] == 'LIQUIDATE')
                 
-                self.algorithm.log_debug(f"交易分布: 买入{buy_count}个, 卖出{sell_count}个, 清仓{liquidate_count}个")
+                self.algorithm.log_debug(f"交易分布: 买入{buy_count}个, 卖出{sell_count}个, 清仓{liquidate_count}个", log_type="trading")
             else:
-                self.algorithm.log_debug("⚠️ 无交易成功执行")
+                self.algorithm.log_debug("⚠️ 无交易成功执行", log_type="trading")
             
             self._last_trades_executed = executed_trades
             return len(executed_trades) > 0
             
         except Exception as e:
-            self.algorithm.log_debug(f"❌ 交易执行系统错误: {str(e)}")
+            self.algorithm.log_debug(f"❌ 交易执行系统错误: {str(e)}", log_type="trading")
             return False
     
     def _log_rebalance_summary(self, executed_trades):
@@ -307,8 +307,8 @@ class SmartRebalancer:
             if not executed_trades:
                 return
                 
-            self.algorithm.log_debug("=== 再平衡执行摘要 ===")
-            self.algorithm.log_debug(f"执行交易数量: {len(executed_trades)}")
+            self.algorithm.log_debug("=== 再平衡执行摘要 ===", log_type="trading")
+            self.algorithm.log_debug(f"执行交易数量: {len(executed_trades)}", log_type="trading")
             
             for trade in executed_trades:
                 symbol = trade['symbol']
@@ -316,10 +316,10 @@ class SmartRebalancer:
                 quantity = trade['quantity']
                 target_weight = trade.get('target_weight', 0)
                 
-                self.algorithm.log_debug(f"  {symbol}: {action} {quantity}股 (目标权重: {target_weight:.1%})")
+                self.algorithm.log_debug(f"  {symbol}: {action} {quantity}股 (目标权重: {target_weight:.1%})", log_type="trading")
                 
         except Exception as e:
-            self.algorithm.log_debug(f"记录再平衡摘要失败: {str(e)}")
+            self.algorithm.log_debug(f"记录再平衡摘要失败: {str(e)}", log_type="trading")
     
     def get_last_trades_executed(self):
         """获取最后执行的交易"""
