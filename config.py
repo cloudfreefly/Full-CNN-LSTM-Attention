@@ -433,7 +433,10 @@ class AlgorithmConfig:
         'diversification': True,
         'system': True,
         'optimizer': True,
-        'algorithm': True
+        'algorithm': True,
+        'leverage': True,      # 启用杠杆debug日志
+        'trading': True,       # 启用交易debug日志
+        'optimization': True   # 启用优化debug日志
     }
     
     LOGGING_CONFIG = {
