@@ -146,6 +146,11 @@ class AlgorithmConfig:
         'target_leverage_equity_ratio': 1.5, # 目标杠杆股票仓位150%
         'leverage_rebalance_threshold': 0.02, # 杠杆环境下调仓阈值2%（更敏感）
         'leverage_cash_buffer': -0.45,       # 杠杆现金缓冲-45%（接近150%持仓）
+        
+        # === 交易成本控制 ===
+        'min_trade_value': 2000,             # 最小交易金额（美元）- 防止小额交易产生过高手续费
+        'min_trade_percentage': 0.02,        # 最小交易比例（2%）- 避免过小的仓位调整
+        'transaction_cost_threshold': 0.001, # 交易成本阈值（0.1%）- 当预期收益超过成本时才交易
     }
     
     # 风险控制开关配置

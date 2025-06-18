@@ -158,11 +158,13 @@ class SmartRebalancer:
         """生成交易指令"""
         try:
             trades = []
+            min_trade_value = self.config.PORTFOLIO_CONFIG.get('min_trade_value', 2000)  # 最小交易金额
             
             # 处理需要买入/调整的股票
             for symbol_str, target_info in target_holdings.items():
                 target_quantity = target_info['target_quantity']
                 current_quantity = 0
+                current_price = target_info['current_price']
                 
                 if symbol_str in current_holdings:
                     current_quantity = current_holdings[symbol_str]['quantity']
@@ -170,26 +172,49 @@ class SmartRebalancer:
                 quantity_diff = target_quantity - current_quantity
                 
                 if abs(quantity_diff) > 0:  # 需要交易
-                    trades.append({
-                        'symbol': symbol_str,
-                        'action': 'BUY' if quantity_diff > 0 else 'SELL',
-                        'quantity': abs(quantity_diff),
-                        'target_quantity': target_quantity,
-                        'current_quantity': current_quantity,
-                        'target_weight': target_info['target_weight']
-                    })
+                    # 计算交易金额
+                    trade_value = abs(quantity_diff) * current_price
+                    
+                    # 检查是否满足最小交易金额要求
+                    if trade_value >= min_trade_value:
+                        trades.append({
+                            'symbol': symbol_str,
+                            'action': 'BUY' if quantity_diff > 0 else 'SELL',
+                            'quantity': abs(quantity_diff),
+                            'target_quantity': target_quantity,
+                            'current_quantity': current_quantity,
+                            'target_weight': target_info['target_weight'],
+                            'trade_value': trade_value,
+                            'price': current_price
+                        })
+                        self.algorithm.log_debug(f"交易指令: {symbol_str} {quantity_diff:+d}股, "
+                                               f"金额: ${trade_value:,.2f}")
+                    else:
+                        self.algorithm.log_debug(f"跳过小额交易: {symbol_str} {quantity_diff:+d}股, "
+                                               f"金额: ${trade_value:,.2f} < 最小限额: ${min_trade_value:,.0f}")
             
-            # 处理需要清仓的股票
+            # 处理需要清仓的股票 - 清仓不受最小金额限制
             for symbol_str, current_info in current_holdings.items():
                 if symbol_str not in target_holdings:
+                    liquidate_value = abs(current_info['quantity']) * current_info['price']
                     trades.append({
                         'symbol': symbol_str,
                         'action': 'LIQUIDATE',
                         'quantity': abs(current_info['quantity']),
                         'target_quantity': 0,
                         'current_quantity': current_info['quantity'],
-                        'target_weight': 0
+                        'target_weight': 0,
+                        'trade_value': liquidate_value,
+                        'price': current_info['price']
                     })
+                    self.algorithm.log_debug(f"清仓指令: {symbol_str} {current_info['quantity']}股, "
+                                           f"金额: ${liquidate_value:,.2f}")
+            
+            if trades:
+                total_trade_value = sum(trade['trade_value'] for trade in trades)
+                self.algorithm.log_debug(f"生成 {len(trades)} 个交易指令，总交易金额: ${total_trade_value:,.2f}")
+            else:
+                self.algorithm.log_debug("无符合条件的交易指令生成")
             
             return trades
             
@@ -201,15 +226,22 @@ class SmartRebalancer:
         """执行交易"""
         try:
             executed_trades = []
+            total_trade_value = 0
+            
+            self.algorithm.log_debug(f"=== 开始执行交易 - 共{len(trades)}个指令 ===")
             
             for trade in trades:
                 try:
                     symbol_str = trade['symbol']
                     action = trade['action']
                     quantity = trade['quantity']
+                    trade_value = trade.get('trade_value', 0)
+                    price = trade.get('price', 0)
                     
                     symbol = Symbol.Create(symbol_str, SecurityType.Equity, Market.USA)
                     
+                    # 执行订单
+                    order_ticket = None
                     if action == 'BUY':
                         order_ticket = self.algorithm.MarketOrder(symbol, quantity)
                     elif action == 'SELL':
@@ -217,6 +249,7 @@ class SmartRebalancer:
                     elif action == 'LIQUIDATE':
                         order_ticket = self.algorithm.Liquidate(symbol)
                     else:
+                        self.algorithm.log_debug(f"未知交易动作: {action}")
                         continue
                     
                     if order_ticket:
@@ -225,18 +258,47 @@ class SmartRebalancer:
                             'action': action,
                             'quantity': quantity,
                             'order_ticket': order_ticket,
-                            'target_weight': trade.get('target_weight', 0)
+                            'target_weight': trade.get('target_weight', 0),
+                            'trade_value': trade_value,
+                            'price': price
                         })
                         
+                        total_trade_value += trade_value
+                        
+                        # 详细交易日志
+                        self.algorithm.log_debug(f"✅ 执行成功: {action} {symbol_str} "
+                                               f"{quantity:,}股 @ ${price:.2f} = ${trade_value:,.2f}")
+                    else:
+                        self.algorithm.log_debug(f"❌ 订单创建失败: {symbol_str}")
+                        
                 except Exception as trade_error:
-                    self.algorithm.log_debug(f"执行交易失败 {trade['symbol']}: {str(trade_error)}")
+                    self.algorithm.log_debug(f"❌ 交易执行异常 {trade['symbol']}: {str(trade_error)}")
                     continue
+            
+            # 交易执行总结
+            if executed_trades:
+                self.algorithm.log_debug(f"=== 交易执行完成 ===")
+                self.algorithm.log_debug(f"成功执行: {len(executed_trades)}/{len(trades)} 个交易")
+                self.algorithm.log_debug(f"总交易金额: ${total_trade_value:,.2f}")
+                
+                # 估算交易成本（假设0.1%的交易成本）
+                estimated_cost = total_trade_value * 0.001
+                self.algorithm.log_debug(f"预估交易成本: ${estimated_cost:.2f} (0.1%)")
+                
+                # 按动作分类统计
+                buy_count = sum(1 for t in executed_trades if t['action'] == 'BUY')
+                sell_count = sum(1 for t in executed_trades if t['action'] == 'SELL')
+                liquidate_count = sum(1 for t in executed_trades if t['action'] == 'LIQUIDATE')
+                
+                self.algorithm.log_debug(f"交易分布: 买入{buy_count}个, 卖出{sell_count}个, 清仓{liquidate_count}个")
+            else:
+                self.algorithm.log_debug("⚠️ 无交易成功执行")
             
             self._last_trades_executed = executed_trades
             return len(executed_trades) > 0
             
         except Exception as e:
-            self.algorithm.log_debug(f"交易执行失败: {str(e)}")
+            self.algorithm.log_debug(f"❌ 交易执行系统错误: {str(e)}")
             return False
     
     def _log_rebalance_summary(self, executed_trades):

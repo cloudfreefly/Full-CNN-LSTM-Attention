@@ -193,33 +193,61 @@ class PositionLogger:
             'trades_count': len(trades_executed) if trades_executed else 0,
             'trades_executed': [],
             'total_trade_value': 0,
-            'position_changes': []
+            'position_changes': [],
+            'skipped_small_trades': 0,
+            'estimated_transaction_cost': 0
         }
         
         if trades_executed:
             for trade in trades_executed:
+                # 兼容新旧交易数据格式
+                trade_value = trade.get('trade_value', trade.get('value', 0))
+                price = trade.get('price', 0)
+                
                 trade_info = {
                     'symbol': str(trade.get('symbol', 'unknown')),
                     'action': trade.get('action', 'unknown'),
                     'quantity': float(trade.get('quantity', 0)),
-                    'price': float(trade.get('price', 0)),
-                    'value': float(trade.get('value', 0)),
-                    'reason': trade.get('reason', '')
+                    'price': float(price),
+                    'value': float(trade_value),
+                    'reason': trade.get('reason', ''),
+                    'target_weight': float(trade.get('target_weight', 0))
                 }
                 execution_result['trades_executed'].append(trade_info)
                 execution_result['total_trade_value'] += abs(trade_info['value'])
                 
-                action_text = "买入" if trade_info['action'] == 'BUY' else "卖出"
+                # 根据动作显示中文
+                action_text_map = {
+                    'BUY': '买入',
+                    'SELL': '卖出', 
+                    'LIQUIDATE': '清仓'
+                }
+                action_text = action_text_map.get(trade_info['action'], trade_info['action'])
+                
                 self.algorithm.log_debug(f"{action_text} {trade_info['symbol']}: "
                                    f"数量={trade_info['quantity']:,.0f}, "
                                    f"价格=${trade_info['price']:.2f}, "
                                    f"价值=${trade_info['value']:,.2f}", log_type="portfolio")
+                
+                if trade_info['target_weight'] > 0:
+                    self.algorithm.log_debug(f"  目标权重: {trade_info['target_weight']:.2%}", log_type="portfolio")
+                
                 if trade_info['reason']:
                     self.algorithm.log_debug(f"  原因: {trade_info['reason']}", log_type="portfolio")
         else:
             self.algorithm.log_debug("无交易执行", log_type="portfolio")
         
+        # 计算预估交易成本
+        execution_result['estimated_transaction_cost'] = execution_result['total_trade_value'] * 0.001
+        
         self.algorithm.log_debug(f"总交易价值: ${execution_result['total_trade_value']:,.2f}", log_type="portfolio")
+        self.algorithm.log_debug(f"预估交易成本: ${execution_result['estimated_transaction_cost']:.2f} (0.1%)", log_type="portfolio")
+        
+        # 检查是否有小额交易被跳过的情况
+        min_trade_value = getattr(self.algorithm.config, 'PORTFOLIO_CONFIG', {}).get('min_trade_value', 2000)
+        if execution_result['total_trade_value'] > 0:
+            cost_ratio = execution_result['estimated_transaction_cost'] / execution_result['total_trade_value']
+            self.algorithm.log_debug(f"交易成本比例: {cost_ratio:.3%} (最小交易金额: ${min_trade_value:,.0f})", log_type="portfolio")
         
         self.current_rebalance['execution_result'] = execution_result
     
