@@ -97,6 +97,14 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
         # 添加每日收盘后自动输出投资组合报告
         self.Schedule.On(self.DateRules.EveryDay(), self.TimeRules.AfterMarketClose("SPY", 1), self._log_daily_report_wrapper)
         
+        # 记录初始投资组合价值用于性能计算
+        self._initial_portfolio_value = self.Portfolio.TotalPortfolioValue
+        
+        # 初始化投资组合价值历史记录（用于夏普比率计算）
+        self._portfolio_value_history = []
+        self._daily_returns = []
+        self._last_portfolio_value = self._initial_portfolio_value
+        
     def _initialize_modules(self):
         """初始化各功能模块"""
         # 数据处理模块
@@ -649,6 +657,30 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
             # 存储最新数据slice
             self.data_slice = data
             
+            # 维护投资组合价值历史记录（用于夏普比率计算）
+            current_portfolio_value = float(self.Portfolio.TotalPortfolioValue)
+            
+            # 每日更新投资组合价值历史
+            current_day = self.Time.date()
+            if not hasattr(self, '_last_update_day') or self._last_update_day != current_day:
+                self._last_update_day = current_day
+                
+                # 添加到历史记录
+                self._portfolio_value_history.append(current_portfolio_value)
+                
+                # 计算日收益率
+                if len(self._portfolio_value_history) > 1:
+                    daily_return = (current_portfolio_value - self._last_portfolio_value) / self._last_portfolio_value
+                    self._daily_returns.append(daily_return)
+                
+                self._last_portfolio_value = current_portfolio_value
+                
+                # 限制历史记录长度（保留最近252个交易日）
+                if len(self._portfolio_value_history) > 252:
+                    self._portfolio_value_history = self._portfolio_value_history[-252:]
+                if len(self._daily_returns) > 252:
+                    self._daily_returns = self._daily_returns[-252:]
+            
             # 数据诊断 - 检查data_slice状态
             if data is None:
                 self.log_debug("WARNING: OnData received None data", log_type="data")
@@ -674,7 +706,6 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
                 self.log_debug(f"Total symbols in data slice: {total_symbols_in_slice}", log_type="data")
             
             # 跟踪每日开始时间
-            current_day = self.Time.date()
             if self.current_trading_day != current_day:
                 self.current_trading_day = current_day
                 self.daily_start_time = time.time()

@@ -611,61 +611,95 @@ class QuantConnectOptimizationManager:
     def _calculate_simple_sharpe_ratio(self) -> float:
         """计算夏普比率（简化版）"""
         try:
-            # 获取历史收益数据
-            if hasattr(self.algorithm, 'Portfolio') and hasattr(self.algorithm.Portfolio, 'TotalPortfolioValue'):
-                # 尝试从算法中获取收益历史
-                if hasattr(self.algorithm, '_portfolio_value_history'):
-                    values = self.algorithm._portfolio_value_history
-                    if len(values) >= 20:  # 至少20个数据点
-                        returns = [(values[i] / values[i-1] - 1) for i in range(1, len(values))]
-                        if len(returns) > 0:
-                            mean_return = np.mean(returns)
-                            std_return = np.std(returns)
-                            if std_return > 0:
-                                # 年化夏普比率（假设日数据）
-                                annual_sharpe = (mean_return * 252) / (std_return * np.sqrt(252))
-                                
-                                # 异常值检测和修正
-                                if annual_sharpe > 5.0:  # 夏普比率超过5.0异常
-                                    self.algorithm.Debug(f"夏普比率异常高({annual_sharpe:.2f})，使用保守估算")
-                                    annual_sharpe = min(annual_sharpe, 3.0)  # 限制最大值为3.0
-                                elif annual_sharpe < -3.0:  # 夏普比率低于-3.0异常
-                                    annual_sharpe = max(annual_sharpe, -2.0)  # 限制最小值为-2.0
-                                
-                                return float(annual_sharpe)
+            # 方法1：使用投资组合价值历史记录
+            if hasattr(self.algorithm, '_portfolio_value_history') and len(self.algorithm._portfolio_value_history) >= 20:
+                values = self.algorithm._portfolio_value_history
+                self.algorithm.Debug(f"使用投资组合价值历史计算夏普比率: {len(values)}个数据点")
                 
-                # 备用方法：使用简化计算
-                current_value = float(self.algorithm.Portfolio.TotalPortfolioValue)
-                if hasattr(self.algorithm, '_initial_portfolio_value') and self.algorithm._initial_portfolio_value > 0:
-                    total_return = current_value / self.algorithm._initial_portfolio_value - 1
-                    # 估算时间（天数）
-                    if hasattr(self.algorithm, 'Time') and hasattr(self.algorithm, 'StartDate'):
-                        days = (self.algorithm.Time - self.algorithm.StartDate).days
-                        if days > 30:  # 至少30天的数据
-                            # 简化的年化夏普比率估算
-                            annual_return = (1 + total_return) ** (365.0 / days) - 1
+                returns = [(values[i] / values[i-1] - 1) for i in range(1, len(values))]
+                if len(returns) > 0:
+                    mean_return = np.mean(returns)
+                    std_return = np.std(returns)
+                    
+                    self.algorithm.Debug(f"日收益率统计: 平均={mean_return:.6f}, 标准差={std_return:.6f}")
+                    
+                    if std_return > 0:
+                        # 年化夏普比率（假设日数据）
+                        annual_sharpe = (mean_return * 252) / (std_return * np.sqrt(252))
+                        
+                        self.algorithm.Debug(f"计算的年化夏普比率: {annual_sharpe:.4f}")
+                        
+                        # 合理性检查
+                        if annual_sharpe > 4.0:
+                            self.algorithm.Debug(f"夏普比率异常高({annual_sharpe:.2f})，可能存在计算问题")
+                            # 检查收益率是否过高
+                            annual_return = mean_return * 252
+                            self.algorithm.Debug(f"年化收益率: {annual_return:.4f} ({annual_return*100:.2f}%)")
+                            self.algorithm.Debug(f"年化波动率: {std_return * np.sqrt(252):.4f}")
                             
-                            # 根据收益率估算合理的夏普比率
-                            if annual_return > 0:
-                                # 高收益通常伴随高波动，夏普比率不会太高
-                                estimated_sharpe = min(annual_return / 0.3, 2.5)  # 假设30%波动率，最大2.5
-                            else:
-                                estimated_sharpe = annual_return / 0.2  # 负收益时假设20%波动率
-                            
-                            # 最终的合理性检查
-                            estimated_sharpe = max(min(estimated_sharpe, 3.0), -2.0)
-                            
-                            return float(estimated_sharpe)
-                
-                # 如果无法计算，返回基于收益率的保守估算
-                if hasattr(self.algorithm, '_initial_portfolio_value') and self.algorithm._initial_portfolio_value > 0:
-                    total_return = current_value / self.algorithm._initial_portfolio_value - 1
-                    # 非常保守的估算：正收益给适中的正分数
-                    if total_return > 0:
-                        return min(total_return * 0.5, 2.0)  # 限制在2.0以内
+                            # 如果年化收益率超过500%，很可能是计算错误
+                            if annual_return > 5.0:
+                                self.algorithm.Debug("检测到异常高收益率，使用保守估算")
+                                annual_sharpe = min(annual_sharpe, 2.5)
+                        elif annual_sharpe < -3.0:
+                            annual_sharpe = max(annual_sharpe, -2.0)
+                        
+                        return float(annual_sharpe)
                     else:
-                        return max(total_return * 0.5, -1.0)  # 限制在-1.0以上
+                        self.algorithm.Debug("收益率标准差为0，无法计算夏普比率")
+                else:
+                    self.algorithm.Debug("无法计算收益率序列")
             
+            # 方法2：使用日收益率历史记录
+            elif hasattr(self.algorithm, '_daily_returns') and len(self.algorithm._daily_returns) >= 20:
+                returns = self.algorithm._daily_returns
+                self.algorithm.Debug(f"使用日收益率历史计算夏普比率: {len(returns)}个数据点")
+                
+                mean_return = np.mean(returns)
+                std_return = np.std(returns)
+                
+                self.algorithm.Debug(f"日收益率统计: 平均={mean_return:.6f}, 标准差={std_return:.6f}")
+                
+                if std_return > 0:
+                    # 年化夏普比率
+                    annual_sharpe = (mean_return * 252) / (std_return * np.sqrt(252))
+                    self.algorithm.Debug(f"基于日收益率的年化夏普比率: {annual_sharpe:.4f}")
+                    
+                    # 合理性检查
+                    if abs(annual_sharpe) > 4.0:
+                        self.algorithm.Debug(f"夏普比率可能异常: {annual_sharpe:.4f}")
+                        annual_sharpe = max(min(annual_sharpe, 3.0), -2.0)
+                    
+                    return float(annual_sharpe)
+            
+            # 方法3：基于总收益率的简化估算
+            current_value = float(self.algorithm.Portfolio.TotalPortfolioValue)
+            if hasattr(self.algorithm, '_initial_portfolio_value') and self.algorithm._initial_portfolio_value > 0:
+                total_return = current_value / self.algorithm._initial_portfolio_value - 1
+                
+                # 估算运行天数
+                if hasattr(self.algorithm, 'Time') and hasattr(self.algorithm, 'StartDate'):
+                    days = (self.algorithm.Time - self.algorithm.StartDate).days
+                    if days > 30:  # 至少30天的数据
+                        # 年化收益率
+                        annual_return = (1 + total_return) ** (365.0 / days) - 1
+                        
+                        self.algorithm.Debug(f"基于总收益的估算: 总收益={total_return:.4f}, 运行天数={days}, 年化收益={annual_return:.4f}")
+                        
+                        # 保守的夏普比率估算
+                        if annual_return > 0:
+                            # 假设高收益伴随高波动，夏普比率不会太高
+                            estimated_volatility = max(0.15, abs(annual_return) * 0.5)  # 至少15%波动率
+                            estimated_sharpe = annual_return / estimated_volatility
+                            estimated_sharpe = min(estimated_sharpe, 2.5)  # 限制最大值
+                        else:
+                            estimated_sharpe = annual_return / 0.2  # 负收益时假设20%波动率
+                        
+                        self.algorithm.Debug(f"估算的夏普比率: {estimated_sharpe:.4f} (基于估算波动率: {estimated_volatility:.4f})")
+                        
+                        return float(max(min(estimated_sharpe, 3.0), -2.0))
+            
+            self.algorithm.Debug("无法计算夏普比率，返回0")
             return 0.0
             
         except Exception as e:
