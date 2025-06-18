@@ -1,0 +1,221 @@
+{
+    "cloud-id": 23571324,
+    "algorithm-language": "Python",
+    "parameters": {},
+    "description": "With Auto optimization",
+    "organization-id": "6131440b5e1165e7480c2e395be44605",
+    "python-venv": 1,
+    "deployment-target": "Cloud Platform",
+    "backtestGrid": {
+        "md": [
+            {
+                "chartName": "Strategy Equity",
+                "width": 12,
+                "height": 6,
+                "row": 1,
+                "column": 1,
+                "sort": 11
+            },
+            {
+                "chartName": "Portfolio Margin",
+                "width": 12,
+                "height": 4,
+                "row": 7,
+                "column": 1,
+                "sort": 71
+            },
+            {
+                "chartName": "Drawdown",
+                "width": 6,
+                "height": 5,
+                "row": 11,
+                "column": 1,
+                "sort": 111
+            },
+            {
+                "chartName": "Portfolio Turnover",
+                "width": 12,
+                "height": 4,
+                "row": 16,
+                "column": 1,
+                "sort": 161
+            },
+            {
+                "chartName": "Exposure",
+                "width": 12,
+                "height": 4,
+                "row": 20,
+                "column": 1,
+                "sort": 201
+            }
+        ],
+        "sm": [
+            {
+                "chartName": "Strategy Equity",
+                "width": 12,
+                "height": 6,
+                "row": 1,
+                "column": 1,
+                "sort": 11
+            },
+            {
+                "chartName": "Portfolio Margin",
+                "width": 12,
+                "height": 4,
+                "row": 7,
+                "column": 1,
+                "sort": 71
+            },
+            {
+                "chartName": "Drawdown",
+                "width": 6,
+                "height": 5,
+                "row": 11,
+                "column": 1,
+                "sort": 111
+            },
+            {
+                "chartName": "Portfolio Turnover",
+                "width": 12,
+                "height": 4,
+                "row": 16,
+                "column": 1,
+                "sort": 161
+            },
+            {
+                "chartName": "Exposure",
+                "width": 12,
+                "height": 4,
+                "row": 20,
+                "column": 1,
+                "sort": 201
+            }
+        ],
+        "xs": [
+            {
+                "chartName": "Strategy Equity",
+                "width": 12,
+                "height": 6,
+                "row": 1,
+                "column": 1,
+                "sort": 11
+            },
+            {
+                "chartName": "Portfolio Margin",
+                "width": 12,
+                "height": 4,
+                "row": 7,
+                "column": 1,
+                "sort": 71
+            },
+            {
+                "chartName": "Drawdown",
+                "width": 6,
+                "height": 5,
+                "row": 11,
+                "column": 1,
+                "sort": 111
+            },
+            {
+                "chartName": "Portfolio Turnover",
+                "width": 12,
+                "height": 4,
+                "row": 16,
+                "column": 1,
+                "sort": 161
+            },
+            {
+                "chartName": "Exposure",
+                "width": 12,
+                "height": 4,
+                "row": 20,
+                "column": 1,
+                "sort": 201
+            }
+        ],
+        "lg": [
+            {
+                "chartName": "Strategy Equity",
+                "width": 12,
+                "height": 6,
+                "row": 1,
+                "column": 1,
+                "sort": 11
+            },
+            {
+                "chartName": "Portfolio Margin",
+                "width": 12,
+                "height": 4,
+                "row": 7,
+                "column": 1,
+                "sort": 71
+            },
+            {
+                "chartName": "Drawdown",
+                "width": 6,
+                "height": 5,
+                "row": 11,
+                "column": 1,
+                "sort": 111
+            },
+            {
+                "chartName": "Portfolio Turnover",
+                "width": 12,
+                "height": 4,
+                "row": 16,
+                "column": 1,
+                "sort": 161
+            },
+            {
+                "chartName": "Exposure",
+                "width": 12,
+                "height": 4,
+                "row": 20,
+                "column": 1,
+                "sort": 201
+            }
+        ],
+        "xl": [
+            {
+                "chartName": "Strategy Equity",
+                "width": 12,
+                "height": 6,
+                "row": 1,
+                "column": 1,
+                "sort": 11
+            },
+            {
+                "chartName": "Portfolio Margin",
+                "width": 12,
+                "height": 4,
+                "row": 7,
+                "column": 1,
+                "sort": 71
+            },
+            {
+                "chartName": "Drawdown",
+                "width": 6,
+                "height": 5,
+                "row": 11,
+                "column": 1,
+                "sort": 111
+            },
+            {
+                "chartName": "Portfolio Turnover",
+                "width": 12,
+                "height": 4,
+                "row": 16,
+                "column": 1,
+                "sort": 161
+            },
+            {
+                "chartName": "Exposure",
+                "width": 12,
+                "height": 4,
+                "row": 20,
+                "column": 1,
+                "sort": 201
+            }
+        ]
+    }
+}
