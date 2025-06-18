@@ -123,24 +123,50 @@ class BaseOptimizer(ABC):
         
         # 基于参数调整性能
         days = 252 * 2  # 2年
-        base_return = 0.0005
         
-        # 参数影响收益和风险
-        volatility_factor = params.get('volatility_threshold', 0.20) / 0.20
-        drawdown_factor = params.get('max_drawdown', 0.10) / 0.10
-        portfolio_size_factor = params.get('target_portfolio_size', 10) / 10
+        # 改进的基础收益率设置（更现实的市场表现）
+        base_daily_return = 0.0008  # 提高基础日收益率
+        base_annual_volatility = 0.15  # 基础年化波动率
         
-        # 调整基础收益
-        adjusted_return = base_return * (2 - volatility_factor) * portfolio_size_factor
-        adjusted_volatility = 0.012 * volatility_factor * (1 + drawdown_factor)
+        # 参数影响收益和风险的逻辑改进
+        volatility_threshold = params.get('volatility_threshold', 0.20)
+        max_drawdown = params.get('max_drawdown', 0.10)
+        portfolio_size = params.get('target_portfolio_size', 10)
+        leverage_ratio = params.get('max_leverage_ratio', 1.0)
         
-        returns = np.random.normal(adjusted_return, adjusted_volatility, days)
+        # 更合理的参数影响模型
+        # 波动率阈值越低，收益越稳定但可能较低
+        volatility_factor = 0.20 / volatility_threshold  # 反比关系
+        # 最大回撤限制越严格，风险调整后收益越好
+        drawdown_factor = 0.10 / max_drawdown  # 反比关系
+        # 投资组合规模适中时表现最佳
+        size_factor = 1.0 - abs(portfolio_size - 10) * 0.02
+        # 适度杠杆可以提升收益
+        leverage_factor = min(leverage_ratio, 1.5) * 0.8
+        
+        # 综合调整因子
+        performance_multiplier = volatility_factor * drawdown_factor * size_factor * leverage_factor
+        
+        # 调整后的收益和风险参数
+        adjusted_daily_return = base_daily_return * performance_multiplier
+        adjusted_daily_volatility = (base_annual_volatility / np.sqrt(252)) * (2.0 - volatility_factor)
+        
+        # 生成收益序列
+        returns = np.random.normal(adjusted_daily_return, adjusted_daily_volatility, days)
+        
+        # 添加一些市场现实性：偶尔的大幅波动
+        shock_probability = 0.02  # 2%概率出现冲击
+        shock_indices = np.random.random(days) < shock_probability
+        returns[shock_indices] *= np.random.normal(-2, 1, np.sum(shock_indices))
+        
+        # 计算权益曲线
         equity_curve = np.cumprod(1 + returns) * 100000
         
         return {
             'returns': returns,
             'equity_curve': equity_curve,
-            'final_value': equity_curve[-1]
+            'final_value': equity_curve[-1],
+            'performance_multiplier': performance_multiplier  # 用于调试
         }
     
     def _calculate_metrics(self, backtest_results: Dict) -> Dict:

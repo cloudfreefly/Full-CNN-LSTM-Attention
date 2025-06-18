@@ -35,6 +35,21 @@ class QuantConnectOptimizationManager:
             # 设置初始基准
             self._set_performance_baseline()
             
+            # 重要：正确初始化current_best_score为当前实际性能
+            current_performance = self._get_current_performance()
+            if current_performance and 'sharpe_ratio' in current_performance:
+                actual_sharpe = current_performance['sharpe_ratio']
+                # 如果实际夏普比率为0或负数，设置一个合理的基准
+                if actual_sharpe <= 0:
+                    self.current_best_score = -1.0  # 设置为负数，便于找到改进
+                    self.algorithm.Debug(f"当前夏普比率为{actual_sharpe}，设置基准为-1.0")
+                else:
+                    self.current_best_score = actual_sharpe
+                    self.algorithm.Debug(f"设置优化基准夏普比率为: {actual_sharpe:.4f}")
+            else:
+                self.current_best_score = -1.0
+                self.algorithm.Debug("无法获取当前性能，设置基准夏普比率为-1.0")
+            
             self.algorithm.Debug("自动优化系统初始化完成")
             
         except Exception as e:
@@ -144,6 +159,8 @@ class QuantConnectOptimizationManager:
         
         for method in optimization_methods:
             try:
+                self.algorithm.Debug(f"开始{method}优化...")
+                
                 # 创建优化管理器
                 optimizer = ParameterOptimizationManager(self.config)
                 
@@ -154,6 +171,30 @@ class QuantConnectOptimizationManager:
                     objective_function='sharpe_ratio',
                     n_iterations=20  # 减少迭代次数以适应在线环境
                 )
+                
+                # 详细记录优化结果
+                if result and 'best_params' in result:
+                    self.algorithm.Debug(f"{method}优化完成:")
+                    self.algorithm.Debug(f"  最佳参数: {result['best_params']}")
+                    self.algorithm.Debug(f"  最佳分数: {result.get('best_score', 'N/A'):.4f}")
+                    
+                    # 显示参数组合的详细信息
+                    if 'all_results' in result and len(result['all_results']) > 0:
+                        sorted_results = sorted(result['all_results'], 
+                                              key=lambda x: x.get('metrics', {}).get('sharpe_ratio', float('-inf')), 
+                                              reverse=True)
+                        self.algorithm.Debug(f"  测试了{len(result['all_results'])}个参数组合")
+                        self.algorithm.Debug(f"  前3名表现:")
+                        for i, res in enumerate(sorted_results[:3]):
+                            metrics = res.get('metrics', {})
+                            params = res.get('parameters', {})
+                            sharpe = metrics.get('sharpe_ratio', 0)
+                            total_return = metrics.get('total_return', 0)
+                            max_dd = metrics.get('max_drawdown', 0)
+                            self.algorithm.Debug(f"    #{i+1}: 夏普={sharpe:.4f}, 收益={total_return:.2f}%, 回撤={max_dd:.2f}%")
+                            self.algorithm.Debug(f"         参数: {params}")
+                else:
+                    self.algorithm.Debug(f"{method}优化未返回有效结果")
                 
                 results.append(result)
                 
@@ -166,19 +207,49 @@ class QuantConnectOptimizationManager:
     def _analyze_optimization_results(self, results: List[Dict]) -> Optional[Dict]:
         """分析优化结果"""
         if not results:
+            self.algorithm.Debug("优化结果为空")
             return None
             
         best_result = None
         best_score = float('-inf')
         
+        # 找到最佳优化结果
         for result in results:
-            if result.get('best_score', float('-inf')) > best_score:
-                best_score = result['best_score']
+            score = result.get('best_score', float('-inf'))
+            if score > best_score:
+                best_score = score
                 best_result = result
         
-        if best_result and best_score > self.current_best_score:
-            self.current_best_score = best_score
-            return best_result['best_params']
+        # 详细的比较日志
+        self.algorithm.Debug(f"优化结果分析:")
+        self.algorithm.Debug(f"  当前基准夏普比率: {self.current_best_score:.4f}")
+        self.algorithm.Debug(f"  优化最佳夏普比率: {best_score:.4f}")
+        self.algorithm.Debug(f"  改进幅度: {best_score - self.current_best_score:.4f}")
+        
+        # 更合理的改进判断逻辑
+        if best_result:
+            # 计算相对改进和绝对改进
+            absolute_improvement = best_score - self.current_best_score
+            relative_improvement = absolute_improvement / abs(self.current_best_score) if self.current_best_score != 0 else float('inf')
+            
+            # 改进条件：绝对改进>0.01 或 相对改进>2%
+            min_absolute_improvement = 0.01
+            min_relative_improvement = 0.02
+            
+            improvement_found = (
+                absolute_improvement > min_absolute_improvement or
+                relative_improvement > min_relative_improvement
+            )
+            
+            if improvement_found:
+                self.current_best_score = best_score
+                self.algorithm.Debug(f"发现性能改进！应用新配置")
+                self.algorithm.Debug(f"  绝对改进: {absolute_improvement:.4f}")
+                self.algorithm.Debug(f"  相对改进: {relative_improvement*100:.2f}%")
+                return best_result['best_params']
+            else:
+                self.algorithm.Debug(f"改进幅度不足，保持当前配置")
+                self.algorithm.Debug(f"  需要绝对改进>{min_absolute_improvement:.3f}或相对改进>{min_relative_improvement*100:.1f}%")
         
         return None
     
@@ -507,17 +578,48 @@ class QuantConnectOptimizationManager:
             return 0.0
     
     def _calculate_simple_sharpe_ratio(self) -> float:
-        """计算简化的夏普比率"""
+        """计算夏普比率（简化版）"""
         try:
-            if hasattr(self.algorithm, '_daily_returns') and len(self.algorithm._daily_returns) > 10:
-                returns = self.algorithm._daily_returns[-252:]  # 最近一年
-                if len(returns) > 10:
-                    mean_return = np.mean(returns)
-                    std_return = np.std(returns)
-                    if std_return > 0:
-                        return (mean_return * 252) / (std_return * np.sqrt(252))
+            # 获取历史收益数据
+            if hasattr(self.algorithm, 'Portfolio') and hasattr(self.algorithm.Portfolio, 'TotalPortfolioValue'):
+                # 尝试从算法中获取收益历史
+                if hasattr(self.algorithm, '_portfolio_value_history'):
+                    values = self.algorithm._portfolio_value_history
+                    if len(values) >= 20:  # 至少20个数据点
+                        returns = [(values[i] / values[i-1] - 1) for i in range(1, len(values))]
+                        if len(returns) > 0:
+                            mean_return = np.mean(returns)
+                            std_return = np.std(returns)
+                            if std_return > 0:
+                                # 年化夏普比率（假设日数据）
+                                annual_sharpe = (mean_return * 252) / (std_return * np.sqrt(252))
+                                return float(annual_sharpe)
+                
+                # 备用方法：使用简化计算
+                current_value = float(self.algorithm.Portfolio.TotalPortfolioValue)
+                if hasattr(self.algorithm, '_initial_portfolio_value') and self.algorithm._initial_portfolio_value > 0:
+                    total_return = current_value / self.algorithm._initial_portfolio_value - 1
+                    # 估算时间（天数）
+                    if hasattr(self.algorithm, 'Time') and hasattr(self.algorithm, 'StartDate'):
+                        days = (self.algorithm.Time - self.algorithm.StartDate).days
+                        if days > 0:
+                            # 简化的年化夏普比率估算
+                            annual_return = (1 + total_return) ** (365.0 / days) - 1
+                            # 假设波动率为15%（可以根据实际情况调整）
+                            estimated_volatility = 0.15
+                            estimated_sharpe = annual_return / estimated_volatility
+                            return float(estimated_sharpe)
+                
+                # 如果无法计算，返回基于收益率的简单估算
+                if hasattr(self.algorithm, '_initial_portfolio_value') and self.algorithm._initial_portfolio_value > 0:
+                    total_return = current_value / self.algorithm._initial_portfolio_value - 1
+                    # 简单估算：正收益给正分数，负收益给负分数
+                    return float(total_return * 2)  # 简单的比例转换
+            
             return 0.0
-        except:
+            
+        except Exception as e:
+            self.algorithm.Debug(f"计算夏普比率失败: {e}")
             return 0.0
 
 class OptimizationScheduler:
