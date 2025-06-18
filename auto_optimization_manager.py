@@ -70,36 +70,59 @@ class QuantConnectOptimizationManager:
             self.optimization_enabled = False
     
     def should_run_optimization(self) -> bool:
-        """判断是否应该运行优化"""
+        """判断是否应该运行优化 - 专注于回撤期间的优化"""
         if not self.optimization_enabled:
             return False
         
-        # 高性能保护模式：当系统表现优异时，降低优化频率
         current_performance = self._get_current_performance()
-        if current_performance:
-            total_return = current_performance.get('total_return', 0)
-            sharpe_ratio = current_performance.get('sharpe_ratio', 0)
+        if not current_performance:
+            return False
             
-            # 如果系统表现非常好，进入保护模式
-            if total_return > 1000 and sharpe_ratio > 2.0:  # 1000%收益且夏普比率>2
-                self.algorithm.Debug(f"系统高性能运行中(收益{total_return:.1f}%, 夏普{sharpe_ratio:.2f})，进入保护模式")
-                # 延长优化频率到3个月
-                self.optimization_frequency = timedelta(days=90)
-                
-                # 只有在性能显著下降时才优化
-                if not self._significant_performance_degradation():
-                    self.algorithm.Debug("性能稳定，跳过优化")
-                    return False
+        current_drawdown = current_performance.get('max_drawdown', 0)
+        total_return = current_performance.get('total_return', 0)
+        sharpe_ratio = current_performance.get('sharpe_ratio', 0)
+        
+        # 核心逻辑：专注于回撤期间的优化
+        self.algorithm.Debug(f"回撤检查: 当前回撤={current_drawdown:.2f}%, 收益率={total_return:.1f}%, 夏普比率={sharpe_ratio:.2f}")
+        
+        # 1. 超过10%回撤时立即触发优化（最高优先级）
+        if current_drawdown > 10.0:
+            self.algorithm.Debug(f"⚠️ 检测到严重回撤({current_drawdown:.2f}%)，立即触发优化以改进预测有效性")
+            return True
+        
+        # 2. 中等回撤时（5-10%）的智能触发
+        elif current_drawdown > 5.0:
+            # 检查回撤趋势是否在恶化
+            if self._is_drawdown_worsening():
+                self.algorithm.Debug(f"⚠️ 检测到回撤恶化趋势({current_drawdown:.2f}%)，触发预防性优化")
+                return True
             
-        # 检查优化频率
+            # 如果回撤持续时间过长，也需要优化
+            if self._is_drawdown_prolonged():
+                self.algorithm.Debug(f"⚠️ 回撤持续时间过长({current_drawdown:.2f}%)，触发优化")
+                return True
+        
+        # 3. 高性能保护模式：当系统表现优异且回撤很小时，降低优化频率
+        if total_return > 500 and current_drawdown < 3.0 and sharpe_ratio > 1.5:
+            self.algorithm.Debug(f"✅ 系统高性能运行中(收益{total_return:.1f}%, 回撤{current_drawdown:.2f}%)，进入保护模式")
+            
+            # 延长优化频率到3个月，除非出现明显问题
+            self.optimization_frequency = timedelta(days=90)
+            
+            # 只有在性能显著下降时才优化
+            if not self._significant_performance_degradation():
+                self.algorithm.Debug("性能稳定，跳过优化")
+                return False
+        
+        # 4. 检查常规优化频率
         if self.last_optimization_date is None:
             return True
             
         time_since_last = self.algorithm.Time - self.last_optimization_date
         
-        # 如果性能显著下降，提前触发优化
-        if self._performance_degraded():
-            self.algorithm.Debug("检测到性能下降，触发优化")
+        # 5. 如果检测到预测准确性下降，提前触发优化
+        if self._prediction_accuracy_degraded():
+            self.algorithm.Debug("🎯 检测到预测准确性下降，触发优化")
             return True
             
         return time_since_last >= self.optimization_frequency
@@ -151,38 +174,83 @@ class QuantConnectOptimizationManager:
             self.algorithm.Debug(f"参数优化失败: {e}")
     
     def _get_optimization_parameter_space(self) -> Dict:
-        """获取当前适用的参数空间"""
-        # 基于市场状态调整参数空间
+        """获取当前适用的参数空间 - 专注于回撤控制"""
+        # 基于市场状态和当前回撤情况调整参数空间
         vix_level = self._get_current_vix_level()
         market_volatility = self._get_market_volatility()
+        current_performance = self._get_current_performance()
+        current_drawdown = current_performance.get('max_drawdown', 0) if current_performance else 0
         
-        if vix_level > 30:  # 高波动市场
+        self.algorithm.Debug(f"参数空间配置: VIX={vix_level:.1f}, 波动率={market_volatility:.2%}, 当前回撤={current_drawdown:.2%}")
+        
+        # 根据当前回撤情况调整参数空间
+        if current_drawdown > 10.0:  # 严重回撤期间
+            self.algorithm.Debug("🚨 严重回撤期间，使用激进恢复参数空间")
+            return {
+                # 更严格的回撤控制
+                'max_drawdown': [0.05, 0.06, 0.08, 0.10],
+                # 更保守的波动率阈值
+                'volatility_threshold': [0.15, 0.18, 0.20, 0.22],
+                # 更严格的VIX极值水平
+                'vix_extreme_level': [20, 25, 28, 30],
+                # 降低杠杆以控制风险
+                'max_leverage_ratio': [0.6, 0.8, 1.0, 1.2],
+                # 增加防御性现金比例
+                'defensive_max_cash_ratio': [0.4, 0.5, 0.6, 0.7],
+                # 更小的投资组合规模以提高控制力
+                'target_portfolio_size': [6, 8, 10, 12],
+                # 更严格的止损
+                'stop_loss_threshold': [-0.03, -0.05, -0.08],
+                # 更频繁的再平衡
+                'rebalance_tolerance': [0.002, 0.003, 0.005]
+            }
+        elif current_drawdown > 5.0:  # 中等回撤期间
+            self.algorithm.Debug("⚠️ 中等回撤期间，使用平衡恢复参数空间")
+            return {
+                'max_drawdown': [0.06, 0.08, 0.10, 0.12],
+                'volatility_threshold': [0.18, 0.20, 0.22, 0.25],
+                'vix_extreme_level': [25, 28, 30, 32],
+                'max_leverage_ratio': [0.8, 1.0, 1.2, 1.4],
+                'defensive_max_cash_ratio': [0.3, 0.4, 0.5],
+                'target_portfolio_size': [8, 10, 12, 15],
+                'stop_loss_threshold': [-0.05, -0.08, -0.10],
+                'rebalance_tolerance': [0.003, 0.005, 0.008]
+            }
+        elif vix_level > 30:  # 高波动市场（即使当前回撤不大）
+            self.algorithm.Debug("🌪️ 高波动市场，使用防御性参数空间")
             return {
                 'max_drawdown': [0.08, 0.10, 0.12, 0.15],
                 'volatility_threshold': [0.20, 0.25, 0.30, 0.35],
                 'vix_extreme_level': [25, 30, 35],
                 'max_leverage_ratio': [0.8, 1.0, 1.2],
-                'defensive_max_cash_ratio': [0.3, 0.4, 0.5]
+                'defensive_max_cash_ratio': [0.3, 0.4, 0.5],
+                'target_portfolio_size': [8, 10, 12],
+                'rebalance_tolerance': [0.005, 0.008, 0.010]
             }
-        elif vix_level < 18:  # 低波动市场
+        elif vix_level < 18 and current_drawdown < 3.0:  # 低波动且表现良好
+            self.algorithm.Debug("✅ 低波动稳定期间，使用增长导向参数空间")
             return {
-                'max_drawdown': [0.05, 0.08, 0.10],
-                'volatility_threshold': [0.15, 0.20, 0.25],
+                'max_drawdown': [0.08, 0.10, 0.12],
+                'volatility_threshold': [0.18, 0.22, 0.25],
                 'max_leverage_ratio': [1.2, 1.5, 1.8],
                 'target_portfolio_size': [10, 12, 15],
-                'max_weight': [0.10, 0.12, 0.15]
+                'max_weight': [0.10, 0.12, 0.15],
+                'rebalance_tolerance': [0.005, 0.008, 0.012]
             }
         else:  # 正常市场
+            self.algorithm.Debug("📊 正常市场，使用标准参数空间")
             return {
                 'max_drawdown': [0.06, 0.08, 0.10, 0.12],
                 'volatility_threshold': [0.18, 0.22, 0.25, 0.28],
                 'max_leverage_ratio': [1.0, 1.2, 1.5],
                 'target_portfolio_size': [8, 10, 12, 15],
+                'vix_extreme_level': [25, 30, 35],
+                'defensive_max_cash_ratio': [0.2, 0.3, 0.4],
                 'rebalance_tolerance': [0.003, 0.005, 0.010]
             }
     
     def _run_optimization_batch(self, parameter_space: Dict) -> List[Dict]:
-        """运行优化批次"""
+        """运行优化批次 - 专注于回撤期间的表现"""
         results = []
         
         # 使用较少的参数组合以节省计算资源
@@ -190,39 +258,46 @@ class QuantConnectOptimizationManager:
         
         for method in optimization_methods:
             try:
-                self.algorithm.Debug(f"开始{method}优化...")
+                self.algorithm.Debug(f"开始{method}优化（回撤导向）...")
                 
                 # 创建优化管理器
                 optimizer = ParameterOptimizationManager(self.config)
                 
-                # 运行优化（较少迭代次数）
+                # 运行优化（使用回撤导向的目标函数）
                 result = optimizer.run_optimization(
                     parameter_space=parameter_space,
                     optimization_method=method,
-                    objective_function='sharpe_ratio',
-                    n_iterations=20  # 减少迭代次数以适应在线环境
+                    objective_function='drawdown_focused_score',  # 使用新的回撤导向评分
+                    n_iterations=25  # 稍微增加迭代次数以更好地探索参数空间
                 )
                 
                 # 详细记录优化结果
                 if result and 'best_params' in result:
                     self.algorithm.Debug(f"{method}优化完成:")
                     self.algorithm.Debug(f"  最佳参数: {result['best_params']}")
-                    self.algorithm.Debug(f"  最佳分数: {result.get('best_score', 'N/A'):.4f}")
+                    self.algorithm.Debug(f"  回撤导向评分: {result.get('best_score', 'N/A'):.4f}")
                     
                     # 显示参数组合的详细信息
                     if 'all_results' in result and len(result['all_results']) > 0:
                         sorted_results = sorted(result['all_results'], 
-                                              key=lambda x: x.get('metrics', {}).get('sharpe_ratio', float('-inf')), 
+                                              key=lambda x: x.get('metrics', {}).get('drawdown_focused_score', float('-inf')), 
                                               reverse=True)
                         self.algorithm.Debug(f"  测试了{len(result['all_results'])}个参数组合")
-                        self.algorithm.Debug(f"  前3名表现:")
+                        self.algorithm.Debug(f"  前3名表现（回撤导向）:")
                         for i, res in enumerate(sorted_results[:3]):
                             metrics = res.get('metrics', {})
                             params = res.get('parameters', {})
-                            sharpe = metrics.get('sharpe_ratio', 0)
-                            total_return = metrics.get('total_return', 0)
+                            
+                            # 显示关键指标
+                            dd_score = metrics.get('drawdown_focused_score', 0)
                             max_dd = metrics.get('max_drawdown', 0)
-                            self.algorithm.Debug(f"    #{i+1}: 夏普={sharpe:.4f}, 收益={total_return:.2f}%, 回撤={max_dd:.2f}%")
+                            recovery_days = metrics.get('drawdown_recovery_days', 0)
+                            resilience = metrics.get('drawdown_resilience_score', 0)
+                            dd_win_rate = metrics.get('drawdown_win_rate', 0)
+                            
+                            self.algorithm.Debug(f"    #{i+1}: 回撤评分={dd_score:.4f}")
+                            self.algorithm.Debug(f"         最大回撤={max_dd:.2f}%, 恢复天数={recovery_days:.1f}")
+                            self.algorithm.Debug(f"         恢复力={resilience:.3f}, 回撤期胜率={dd_win_rate:.1f}%")
                             self.algorithm.Debug(f"         参数: {params}")
                 else:
                     self.algorithm.Debug(f"{method}优化未返回有效结果")
@@ -735,6 +810,106 @@ class QuantConnectOptimizationManager:
             return significant_degradation
             
         except Exception:
+            return False
+    
+    def _is_drawdown_worsening(self) -> bool:
+        """检查回撤是否在恶化"""
+        try:
+            if not hasattr(self.algorithm, '_portfolio_value_history') or len(self.algorithm._portfolio_value_history) < 10:
+                return False
+            
+            values = self.algorithm._portfolio_value_history[-10:]  # 最近10天
+            
+            # 计算最近的峰值和当前回撤
+            peak_value = max(values)
+            current_value = values[-1]
+            recent_drawdown = (peak_value - current_value) / peak_value
+            
+            # 检查回撤是否在过去5天内加剧
+            if len(values) >= 5:
+                mid_values = values[-5:]
+                mid_peak = max(mid_values)
+                mid_drawdown = (mid_peak - current_value) / mid_peak
+                
+                # 如果最近的回撤比5天前更严重，认为在恶化
+                if recent_drawdown > mid_drawdown * 1.2:  # 恶化20%以上
+                    return True
+            
+            return False
+            
+        except Exception as e:
+            self.algorithm.Debug(f"回撤恶化检查失败: {e}")
+            return False
+    
+    def _is_drawdown_prolonged(self) -> bool:
+        """检查回撤是否持续时间过长"""
+        try:
+            if not hasattr(self.algorithm, '_portfolio_value_history') or len(self.algorithm._portfolio_value_history) < 20:
+                return False
+            
+            values = self.algorithm._portfolio_value_history
+            current_value = values[-1]
+            
+            # 寻找最近的峰值
+            days_since_peak = 0
+            peak_value = current_value
+            
+            for i in range(len(values) - 1, -1, -1):
+                if values[i] > peak_value:
+                    peak_value = values[i]
+                    break
+                days_since_peak += 1
+            
+            current_drawdown = (peak_value - current_value) / peak_value if peak_value > 0 else 0
+            
+            # 如果回撤超过5%且持续超过20个交易日，认为过长
+            if current_drawdown > 0.05 and days_since_peak > 20:
+                self.algorithm.Debug(f"回撤持续{days_since_peak}天，当前回撤{current_drawdown:.2%}")
+                return True
+            
+            return False
+            
+        except Exception as e:
+            self.algorithm.Debug(f"回撤持续时间检查失败: {e}")
+            return False
+    
+    def _prediction_accuracy_degraded(self) -> bool:
+        """检查预测准确性是否下降"""
+        try:
+            # 检查最近的预测准确性
+            if hasattr(self.algorithm, 'model_trainer') and hasattr(self.algorithm.model_trainer, 'recent_predictions'):
+                recent_predictions = getattr(self.algorithm.model_trainer, 'recent_predictions', [])
+                
+                if len(recent_predictions) >= 10:
+                    # 计算最近10次预测的准确率
+                    recent_accuracy = sum(p.get('accuracy', 0) for p in recent_predictions[-10:]) / 10
+                    
+                    # 与历史平均准确率比较
+                    if len(recent_predictions) >= 30:
+                        historical_accuracy = sum(p.get('accuracy', 0) for p in recent_predictions[-30:-10]) / 20
+                        
+                        # 如果准确率下降超过10%，触发优化
+                        if recent_accuracy < historical_accuracy * 0.9:
+                            self.algorithm.Debug(f"预测准确率下降: {historical_accuracy:.2%} -> {recent_accuracy:.2%}")
+                            return True
+            
+            # 检查最近的交易胜率
+            if hasattr(self.algorithm, '_daily_returns') and len(self.algorithm._daily_returns) >= 20:
+                recent_returns = self.algorithm._daily_returns[-10:]
+                historical_returns = self.algorithm._daily_returns[-20:-10]
+                
+                recent_win_rate = sum(1 for r in recent_returns if r > 0) / len(recent_returns)
+                historical_win_rate = sum(1 for r in historical_returns if r > 0) / len(historical_returns)
+                
+                # 如果胜率显著下降，可能预测有效性下降
+                if recent_win_rate < historical_win_rate * 0.8:
+                    self.algorithm.Debug(f"交易胜率下降: {historical_win_rate:.2%} -> {recent_win_rate:.2%}")
+                    return True
+            
+            return False
+            
+        except Exception as e:
+            self.algorithm.Debug(f"预测准确性检查失败: {e}")
             return False
 
 class OptimizationScheduler:

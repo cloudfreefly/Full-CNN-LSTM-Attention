@@ -117,7 +117,7 @@ class BaseOptimizer(ABC):
             }
     
     def _run_simulated_backtest(self, params: Dict) -> Dict:
-        """运行模拟回测"""
+        """运行模拟回测 - 专注于回撤期间的表现"""
         # 生成模拟的回测结果
         np.random.seed(hash(str(params)) % 2**32)
         
@@ -154,27 +154,155 @@ class BaseOptimizer(ABC):
         # 生成收益序列
         returns = np.random.normal(adjusted_daily_return, adjusted_daily_volatility, days)
         
-        # 添加一些市场现实性：偶尔的大幅波动
-        shock_probability = 0.02  # 2%概率出现冲击
-        shock_indices = np.random.random(days) < shock_probability
-        returns[shock_indices] *= np.random.normal(-2, 1, np.sum(shock_indices))
+        # 模拟市场回撤期间的表现
+        # 添加周期性的回撤事件来测试参数在困难时期的表现
+        self._simulate_drawdown_periods(returns, params)
         
         # 计算权益曲线
         equity_curve = np.cumprod(1 + returns) * 100000
+        
+        # 分析回撤期间的表现
+        drawdown_performance = self._analyze_drawdown_performance(equity_curve, returns)
         
         return {
             'returns': returns,
             'equity_curve': equity_curve,
             'final_value': equity_curve[-1],
-            'performance_multiplier': performance_multiplier  # 用于调试
+            'performance_multiplier': performance_multiplier,
+            'drawdown_performance': drawdown_performance  # 新增：回撤期间表现分析
         }
     
+    def _simulate_drawdown_periods(self, returns: np.ndarray, params: Dict):
+        """模拟回撤期间，测试参数的应对能力"""
+        days = len(returns)
+        
+        # 模拟3-4次回撤事件
+        num_drawdowns = np.random.randint(3, 5)
+        
+        for _ in range(num_drawdowns):
+            # 随机选择回撤开始时间
+            start_day = np.random.randint(0, days - 30)
+            # 回撤持续时间：10-30天
+            duration = np.random.randint(10, 31)
+            end_day = min(start_day + duration, days)
+            
+            # 回撤严重程度：5%-20%
+            drawdown_severity = np.random.uniform(0.05, 0.20)
+            
+            # 根据参数调整回撤期间的表现
+            max_drawdown_param = params.get('max_drawdown', 0.10)
+            volatility_threshold = params.get('volatility_threshold', 0.20)
+            
+            # 参数越保守，回撤期间表现越好
+            recovery_factor = max_drawdown_param / 0.10  # 回撤限制越严格，恢复越快
+            volatility_control = 0.20 / volatility_threshold  # 波动率控制越好，回撤越小
+            
+            # 在回撤期间调整收益率
+            for day in range(start_day, end_day):
+                # 基础负收益
+                base_negative_return = -drawdown_severity / duration
+                
+                # 根据参数调整
+                adjusted_return = base_negative_return * (2.0 - recovery_factor) * (2.0 - volatility_control)
+                
+                # 添加一些随机性
+                noise = np.random.normal(0, 0.002)
+                returns[day] = adjusted_return + noise
+            
+            # 回撤后的恢复期
+            recovery_days = min(duration // 2, days - end_day)
+            for day in range(end_day, end_day + recovery_days):
+                # 恢复期的正收益，参数越好恢复越快
+                recovery_return = (drawdown_severity / recovery_days) * recovery_factor
+                returns[day] = max(returns[day], recovery_return * 0.5)
+    
+    def _analyze_drawdown_performance(self, equity_curve: np.ndarray, returns: np.ndarray) -> Dict:
+        """分析回撤期间的表现"""
+        # 识别回撤期间
+        peak = equity_curve[0]
+        drawdown_periods = []
+        current_drawdown_start = None
+        
+        for i, value in enumerate(equity_curve):
+            if value > peak:
+                # 新高点，结束当前回撤期
+                if current_drawdown_start is not None:
+                    drawdown_periods.append({
+                        'start': current_drawdown_start,
+                        'end': i,
+                        'peak': peak,
+                        'trough': min(equity_curve[current_drawdown_start:i+1]),
+                        'recovery_days': i - current_drawdown_start
+                    })
+                    current_drawdown_start = None
+                peak = value
+            else:
+                # 下跌，开始或继续回撤
+                if current_drawdown_start is None:
+                    current_drawdown_start = i
+        
+        # 计算回撤期间的关键指标
+        if drawdown_periods:
+            avg_recovery_days = np.mean([dd['recovery_days'] for dd in drawdown_periods])
+            max_drawdown_depth = max([(dd['peak'] - dd['trough']) / dd['peak'] for dd in drawdown_periods])
+            drawdown_frequency = len(drawdown_periods) / (len(equity_curve) / 252)  # 年化频率
+            
+            # 计算回撤期间的胜率
+            drawdown_win_rates = []
+            for dd in drawdown_periods:
+                period_returns = returns[dd['start']:dd['end']]
+                if len(period_returns) > 0:
+                    win_rate = sum(1 for r in period_returns if r > 0) / len(period_returns)
+                    drawdown_win_rates.append(win_rate)
+            
+            avg_drawdown_win_rate = np.mean(drawdown_win_rates) if drawdown_win_rates else 0
+            
+            return {
+                'num_drawdowns': len(drawdown_periods),
+                'avg_recovery_days': avg_recovery_days,
+                'max_drawdown_depth': max_drawdown_depth,
+                'drawdown_frequency': drawdown_frequency,
+                'avg_drawdown_win_rate': avg_drawdown_win_rate,
+                'drawdown_resilience_score': self._calculate_resilience_score(drawdown_periods)
+            }
+        else:
+            return {
+                'num_drawdowns': 0,
+                'avg_recovery_days': 0,
+                'max_drawdown_depth': 0,
+                'drawdown_frequency': 0,
+                'avg_drawdown_win_rate': 0,
+                'drawdown_resilience_score': 1.0
+            }
+    
+    def _calculate_resilience_score(self, drawdown_periods: List[Dict]) -> float:
+        """计算回撤恢复力评分"""
+        if not drawdown_periods:
+            return 1.0
+        
+        scores = []
+        for dd in drawdown_periods:
+            # 恢复速度得分（恢复越快得分越高）
+            recovery_score = max(0, 1.0 - dd['recovery_days'] / 60)  # 60天内恢复为满分
+            
+            # 回撤深度得分（回撤越小得分越高）
+            depth = (dd['peak'] - dd['trough']) / dd['peak']
+            depth_score = max(0, 1.0 - depth / 0.20)  # 20%以内回撤为满分
+            
+            # 综合得分
+            combined_score = (recovery_score + depth_score) / 2
+            scores.append(combined_score)
+        
+        return np.mean(scores)
+    
     def _calculate_metrics(self, backtest_results: Dict) -> Dict:
-        """计算性能指标"""
+        """计算性能指标 - 重点关注回撤期间表现"""
         returns = backtest_results['returns']
         equity_curve = backtest_results['equity_curve']
+        drawdown_performance = backtest_results.get('drawdown_performance', {})
         
-        metrics = {
+        # 基础性能指标
+        basic_metrics = {
             'total_return': (equity_curve[-1] / equity_curve[0] - 1) * 100,
             'annual_return': ((equity_curve[-1] / equity_curve[0]) ** (252 / len(equity_curve)) - 1) * 100,
             'sharpe_ratio': OptimizationMetrics.calculate_sharpe_ratio(returns),
@@ -186,7 +314,50 @@ class BaseOptimizer(ABC):
             'volatility': np.std(returns) * np.sqrt(252) * 100
         }
         
-        return metrics
+        # 回撤期间专门指标
+        drawdown_metrics = {
+            'drawdown_recovery_days': drawdown_performance.get('avg_recovery_days', 30),
+            'drawdown_resilience_score': drawdown_performance.get('drawdown_resilience_score', 0.5),
+            'drawdown_win_rate': drawdown_performance.get('avg_drawdown_win_rate', 0.3) * 100,
+            'drawdown_frequency': drawdown_performance.get('drawdown_frequency', 2.0),
+            'max_drawdown_depth': drawdown_performance.get('max_drawdown_depth', 0.15) * 100,
+            'num_drawdowns': drawdown_performance.get('num_drawdowns', 4)
+        }
+        
+        # 计算综合回撤导向评分
+        drawdown_focused_score = self._calculate_drawdown_focused_score(basic_metrics, drawdown_metrics)
+        
+        # 合并所有指标
+        all_metrics = {**basic_metrics, **drawdown_metrics}
+        all_metrics['drawdown_focused_score'] = drawdown_focused_score
+        
+        return all_metrics
+    
+    def _calculate_drawdown_focused_score(self, basic_metrics: Dict, drawdown_metrics: Dict) -> float:
+        """计算专注于回撤期间表现的综合评分"""
+        
+        # 基础性能权重（30%）
+        sharpe_ratio = max(basic_metrics.get('sharpe_ratio', 0), -2)  # 限制最低值
+        calmar_ratio = max(basic_metrics.get('calmar_ratio', 0), -1)
+        basic_score = (sharpe_ratio * 0.6 + calmar_ratio * 0.4) * 0.3
+        
+        # 回撤控制权重（40%）
+        max_drawdown = basic_metrics.get('max_drawdown', 15)
+        drawdown_control_score = max(0, (15 - max_drawdown) / 15) * 0.4  # 回撤越小得分越高
+        
+        # 回撤恢复能力权重（30%）
+        resilience_score = drawdown_metrics.get('drawdown_resilience_score', 0.5)
+        recovery_days = drawdown_metrics.get('drawdown_recovery_days', 30)
+        recovery_speed_score = max(0, (60 - recovery_days) / 60)  # 恢复越快得分越高
+        drawdown_win_rate = drawdown_metrics.get('drawdown_win_rate', 30) / 100
+        
+        recovery_score = (resilience_score * 0.4 + recovery_speed_score * 0.3 + drawdown_win_rate * 0.3) * 0.3
+        
+        # 综合评分
+        total_score = basic_score + drawdown_control_score + recovery_score
+        
+        # 确保评分在合理范围内
+        return max(-2.0, min(5.0, total_score))
 
 class GridSearchOptimizer(BaseOptimizer):
     """网格搜索优化器"""
