@@ -40,14 +40,14 @@ class AdvancedTrainingManager:
         self.pretrained_models_loaded = False
         self.weekend_training_scheduled = False
         
-        self.algorithm.log_debug('training', "高级训练管理器初始化完成", log_type="training")
+        self.algorithm.log_debug('training', "高级训练管理器初始化完成")
     
     def initialize_training_system(self):
         """初始化训练系统（基础初始化，不进行预训练）"""
         try:
             # 0. 测试ObjectStore连接
             if not self._test_object_store_connection():
-                self.algorithm.log_debug('training', "⚠️ ObjectStore连接测试失败，模型缓存功能可能不可用", log_type="training")
+                self.algorithm.log_debug('training', "⚠️ ObjectStore连接测试失败，模型缓存功能可能不可用")
             
             # 1. 设置周末训练调度（如果启用）
             if self.config['enable_weekend_training']:
@@ -58,12 +58,12 @@ class AdvancedTrainingManager:
                 self._start_async_training()
             
             # 注意：预训练将在非交易时间单独调度执行，不在此处进行
-            self.algorithm.log_debug('training', "训练系统基础初始化完成（预训练将在非交易时间进行）", log_type="training")
+            self.algorithm.log_debug('training', "训练系统基础初始化完成（预训练将在非交易时间进行）")
             
             return True
             
         except Exception as e:
-            self.algorithm.log_debug('training', f"训练系统初始化失败: {e}", log_type="training")
+            self.algorithm.log_debug('training', f"训练系统初始化失败: {e}")
             return False
         
     def _load_or_create_pretrained_models(self):
@@ -71,30 +71,30 @@ class AdvancedTrainingManager:
         try:
             # 尝试加载缓存的模型
             if self.config['pretrain_model_cache'] and self._load_cached_models():
-                self.algorithm.log_debug('training', f"成功加载缓存的预训练模型: {len(self.lstm_models)}个", log_type="training")
+                self.algorithm.log_debug('training', f"成功加载缓存的预训练模型: {len(self.lstm_models)}个")
                 self.pretrained_models_loaded = True
                 return True
             
             # 如果没有缓存，进行预训练
             if self.config['enable_pretrain'] and self.config['pretrain_on_startup']:
-                self.algorithm.log_debug('training', "开始历史数据预训练...", log_type="training")
+                self.algorithm.log_debug('training', "开始历史数据预训练...")
                 if self._perform_pretrain():
-                    self.algorithm.log_debug('training', f"预训练完成: {len(self.lstm_models)}个模型，正在缓存模型...", log_type="training")
+                    self.algorithm.log_debug('training', f"预训练完成: {len(self.lstm_models)}个模型，正在缓存模型...")
                     if self.config['pretrain_model_cache']:
                         self._cache_models()
                     self.pretrained_models_loaded = True
                     return True
                 else:
-                    self.algorithm.log_debug('training', "预训练失败，将在运行时使用紧急训练", log_type="training")
+                    self.algorithm.log_debug('training', "预训练失败，将在运行时使用紧急训练")
                     self.pretrained_models_loaded = False
                     return False
             else:
-                self.algorithm.log_debug('training', "预训练已禁用，将在运行时使用快速训练", log_type="training")
+                self.algorithm.log_debug('training', "预训练已禁用，将在运行时使用快速训练")
                 self.pretrained_models_loaded = False
                 return False
             
         except Exception as e:
-            self.algorithm.log_debug('training', f"预训练模型加载/创建失败: {e}", log_type="training")
+            self.algorithm.log_debug('training', f"预训练模型加载/创建失败: {e}")
             self.pretrained_models_loaded = False
             return False
     
@@ -114,52 +114,52 @@ class AdvancedTrainingManager:
                     
                     if history_data is not None:
                         data_length = len(history_data)
-                        self.algorithm.log_debug('training', f"获取 {symbol} 历史数据: {data_length}天 (需要>{500 if self.config.get('pretrain_strict_mode', True) else 100}天)", log_type="training")
+                        self.algorithm.log_debug('training', f"获取 {symbol} 历史数据: {data_length}天 (需要>{500 if self.config.get('pretrain_strict_mode', True) else 100}天)")
                         
                         # 降低数据长度要求，从500天降到100天
                         min_required = 500 if self.config.get('pretrain_strict_mode', True) else 100
                         
                         if data_length > min_required:
                             # 使用历史数据训练模型
-                            self.algorithm.log_debug('training', f"开始预训练 {symbol} (数据长度: {data_length})", log_type="training")
+                            self.algorithm.log_debug('training', f"开始预训练 {symbol} (数据长度: {data_length})")
                             if self._train_pretrain_model(symbol, history_data):
                                 successful_models += 1
-                                self.algorithm.log_debug('training', f"预训练完成: {symbol}", log_type="training")
+                                self.algorithm.log_debug('training', f"预训练完成: {symbol}")
                             else:
-                                self.algorithm.log_debug('training', f"预训练模型构建失败: {symbol}", log_type="training")
+                                self.algorithm.log_debug('training', f"预训练模型构建失败: {symbol}")
                         else:
-                            self.algorithm.log_debug('training', f"跳过 {symbol}: 数据长度不足 ({data_length} <= {min_required})", log_type="training")
+                            self.algorithm.log_debug('training', f"跳过 {symbol}: 数据长度不足 ({data_length} <= {min_required})")
                     else:
-                        self.algorithm.log_debug('training', f"跳过 {symbol}: 无法获取历史数据", log_type="training")
+                        self.algorithm.log_debug('training', f"跳过 {symbol}: 无法获取历史数据")
                     
                     # 控制预训练时间
                     if time.time() - pretrain_start > 1800:  # 30分钟限制
-                        self.algorithm.log_debug('training', "预训练时间限制，停止预训练", log_type="training")
+                        self.algorithm.log_debug('training', "预训练时间限制，停止预训练")
                         break
                     
                 except Exception as e:
-                    self.algorithm.log_debug('training', f"预训练 {symbol} 失败: {e}", log_type="training")
+                    self.algorithm.log_debug('training', f"预训练 {symbol} 失败: {e}")
                     continue
 
             total_time = time.time() - pretrain_start
-            self.algorithm.log_debug('training', f"预训练完成: {successful_models}个模型, 用时{total_time:.1f}秒", log_type="training")
-            self.algorithm.log_debug('training', f"可交易股票列表: {self.tradable_symbols} (共{len(self.tradable_symbols)}个)", log_type="training")
+            self.algorithm.log_debug('training', f"预训练完成: {successful_models}个模型, 用时{total_time:.1f}秒")
+            self.algorithm.log_debug('training', f"可交易股票列表: {self.tradable_symbols} (共{len(self.tradable_symbols)}个)")
             
             # 立即同步模型到model_trainer，确保主算法能识别预训练模型
             if successful_models > 0:
                 self.update_algorithm_models()
-                self.algorithm.log_debug('training', "预训练模型已同步到主算法", log_type="training")
+                self.algorithm.log_debug('training', "预训练模型已同步到主算法")
             
             return successful_models > 0
             
         except Exception as e:
-            self.algorithm.log_debug('training', f"预训练执行失败: {e}", log_type="training")
+            self.algorithm.log_debug('training', f"预训练执行失败: {e}")
             return False
     
     def _get_extended_history(self, symbol, days):
         """获取扩展历史数据用于预训练（增强版）"""
         try:
-            self.algorithm.log_debug('training', f"尝试获取 {symbol} {days}天历史数据...", log_type="training")
+            self.algorithm.log_debug('training', f"尝试获取 {symbol} {days}天历史数据...")
             
             # 尝试多种获取方式
             history_data = None
@@ -172,11 +172,11 @@ class AdvancedTrainingManager:
                 history_list = list(history)
                 if len(history_list) > 0:
                     history_data = np.array([x.Close for x in history_list])
-                    self.algorithm.log_debug('training', f"方法1成功: {symbol} 获得{len(history_data)}个数据点", log_type="training")
+                    self.algorithm.log_debug('training', f"方法1成功: {symbol} 获得{len(history_data)}个数据点")
                 else:
-                    self.algorithm.log_debug('training', f"方法1失败: {symbol} 无历史数据", log_type="training")
+                    self.algorithm.log_debug('training', f"方法1失败: {symbol} 无历史数据")
             except Exception as e1:
-                self.algorithm.log_debug('training', f"方法1异常: {symbol} - {e1}", log_type="training")
+                self.algorithm.log_debug('training', f"方法1异常: {symbol} - {e1}")
             
             # 方法2：直接使用天数（如果方法1失败）
             if history_data is None:
@@ -185,31 +185,31 @@ class AdvancedTrainingManager:
                     history_list = list(history)
                     if len(history_list) > 0:
                         history_data = np.array([x.Close for x in history_list])
-                        self.algorithm.log_debug('training', f"方法2成功: {symbol} 获得{len(history_data)}个数据点", log_type="training")
+                        self.algorithm.log_debug('training', f"方法2成功: {symbol} 获得{len(history_data)}个数据点")
                     else:
-                        self.algorithm.log_debug('training', f"方法2失败: {symbol} 无历史数据", log_type="training")
+                        self.algorithm.log_debug('training', f"方法2失败: {symbol} 无历史数据")
                 except Exception as e2:
-                    self.algorithm.log_debug('training', f"方法2异常: {symbol} - {e2}", log_type="training")
+                    self.algorithm.log_debug('training', f"方法2异常: {symbol} - {e2}")
             
             # 方法3：降级获取较少数据（如果方法2也失败）
             if history_data is None:
                 for fallback_days in [days//2, days//4, 100, 50]:
                     try:
-                        self.algorithm.log_debug('training', f"降级尝试 {symbol}: {fallback_days}天", log_type="training")
+                        self.algorithm.log_debug('training', f"降级尝试 {symbol}: {fallback_days}天")
                         history = self.algorithm.History(symbol, fallback_days, Resolution.Daily)
                         history_list = list(history)
                         if len(history_list) > 20:  # 至少需要20个数据点
                             history_data = np.array([x.Close for x in history_list])
-                            self.algorithm.log_debug('training', f"降级成功: {symbol} 获得{len(history_data)}个数据点", log_type="training")
+                            self.algorithm.log_debug('training', f"降级成功: {symbol} 获得{len(history_data)}个数据点")
                             break
                     except Exception as e3:
-                        self.algorithm.log_debug('training', f"降级失败 {symbol} ({fallback_days}天): {e3}", log_type="training")
+                        self.algorithm.log_debug('training', f"降级失败 {symbol} ({fallback_days}天): {e3}")
                         continue
             
             return history_data
             
         except Exception as e:
-            self.algorithm.log_debug('training', f"获取 {symbol} 扩展历史数据完全失败: {e}", log_type="training")
+            self.algorithm.log_debug('training', f"获取 {symbol} 扩展历史数据完全失败: {e}")
             return None
     
     def _train_pretrain_model(self, symbol, historical_prices):
@@ -223,13 +223,13 @@ class AdvancedTrainingManager:
             return self._build_and_train_pretrain_model(symbol)
             
         except Exception as e:
-            self.algorithm.log_debug('training', f"预训练模型 {symbol} 失败: {e}", log_type="training")
+            self.algorithm.log_debug('training', f"预训练模型 {symbol} 失败: {e}")
             return False
 
     def _preprocess_pretrain_data(self, symbol, prices):
         """预处理预训练数据（增强调试版）"""
         try:
-            self.algorithm.log_debug('training', f"开始预处理 {symbol} 的数据，原始长度: {len(prices)}", log_type="training")
+            self.algorithm.log_debug('training', f"开始预处理 {symbol} 的数据，原始长度: {len(prices)}")
             
             # 数据清洗和验证
             prices_array = np.array(prices)
@@ -238,51 +238,51 @@ class AdvancedTrainingManager:
             nan_count = np.sum(np.isnan(prices_array))
             inf_count = np.sum(np.isinf(prices_array))
             if nan_count > 0 or inf_count > 0:
-                self.algorithm.log_debug('training', f"{symbol} 数据质量问题: {nan_count}个NaN, {inf_count}个无穷值", log_type="training")
+                self.algorithm.log_debug('training', f"{symbol} 数据质量问题: {nan_count}个NaN, {inf_count}个无穷值")
                 return False
             
             # 检查数据长度
             min_required = 100 if self.config.get('pretrain_strict_mode', True) else 50
             if len(prices_array) < min_required:
-                self.algorithm.log_debug('training', f"{symbol} 数据长度不足: {len(prices_array)} < {min_required}", log_type="training")
+                self.algorithm.log_debug('training', f"{symbol} 数据长度不足: {len(prices_array)} < {min_required}")
                 return False
             
-            self.algorithm.log_debug('training', f"{symbol} 数据验证通过，开始特征提取", log_type="training")
+            self.algorithm.log_debug('training', f"{symbol} 数据验证通过，开始特征提取")
             
             # 使用完整的特征矩阵而不是只用价格
             try:
                 feature_matrix = self.algorithm.data_processor.create_feature_matrix(prices_array)
                 if feature_matrix is None:
-                    self.algorithm.log_debug('training', f"{symbol} 特征矩阵创建失败", log_type="training")
+                    self.algorithm.log_debug('training', f"{symbol} 特征矩阵创建失败")
                     return False
-                self.algorithm.log_debug('training', f"{symbol} 特征矩阵创建成功: {feature_matrix.shape}", log_type="training")
+                self.algorithm.log_debug('training', f"{symbol} 特征矩阵创建成功: {feature_matrix.shape}")
             except Exception as feature_error:
-                self.algorithm.log_debug('training', f"{symbol} 特征矩阵创建失败: {feature_error}", log_type="training")
+                self.algorithm.log_debug('training', f"{symbol} 特征矩阵创建失败: {feature_error}")
                 return False
             
             # 数据缩放（使用24个特征）
             try:
                 prices_scaled = self.algorithm.data_processor.scale_data(feature_matrix, symbol, fit=True)
-                self.algorithm.log_debug('training', f"{symbol} 特征数据缩放成功: {prices_scaled.shape}", log_type="training")
+                self.algorithm.log_debug('training', f"{symbol} 特征数据缩放成功: {prices_scaled.shape}")
             except Exception as scale_error:
-                self.algorithm.log_debug('training', f"{symbol} 特征数据缩放失败: {scale_error}", log_type="training")
+                self.algorithm.log_debug('training', f"{symbol} 特征数据缩放失败: {scale_error}")
                 return False
             
             # 创建训练序列
             effective_lookback = min(60, len(prices_array) // 10)  # 预训练使用较长lookback
-            self.algorithm.log_debug('training', f"{symbol} 使用lookback: {effective_lookback}", log_type="training")
+            self.algorithm.log_debug('training', f"{symbol} 使用lookback: {effective_lookback}")
             
             try:
                 X, y = self.create_sequences(prices_scaled, effective_lookback)
-                self.algorithm.log_debug('training', f"{symbol} 序列创建成功: X={X.shape}, y={y.shape}", log_type="training")
+                self.algorithm.log_debug('training', f"{symbol} 序列创建成功: X={X.shape}, y={y.shape}")
             except Exception as seq_error:
-                self.algorithm.log_debug('training', f"{symbol} 序列创建失败: {seq_error}", log_type="training")
+                self.algorithm.log_debug('training', f"{symbol} 序列创建失败: {seq_error}")
                 return False
             
             # 检查序列数量
             min_sequences = 50 if self.config.get('pretrain_strict_mode', True) else 20
             if len(X) < min_sequences:
-                self.algorithm.log_debug('training', f"{symbol} 序列数量不足: {len(X)} < {min_sequences}", log_type="training")
+                self.algorithm.log_debug('training', f"{symbol} 序列数量不足: {len(X)} < {min_sequences}")
                 return False
         
             # 保存预训练数据
@@ -290,32 +290,32 @@ class AdvancedTrainingManager:
             setattr(self, f'_pretrain_{symbol}_y', y)
             self.effective_lookbacks[symbol] = effective_lookback
             
-            self.algorithm.log_debug('training', f"{symbol} 数据预处理完成: {len(X)}个训练序列", log_type="training")
+            self.algorithm.log_debug('training', f"{symbol} 数据预处理完成: {len(X)}个训练序列")
             return True
             
         except Exception as e:
-            self.algorithm.log_debug('training', f"预处理预训练数据 {symbol} 失败: {e}", log_type="training")
+            self.algorithm.log_debug('training', f"预处理预训练数据 {symbol} 失败: {e}")
             return False
     
     def _build_and_train_pretrain_model(self, symbol):
         """构建和训练预训练模型（增强调试版）"""
         try:
-            self.algorithm.log_debug('training', f"开始构建 {symbol} 的预训练模型", log_type="training")
+            self.algorithm.log_debug('training', f"开始构建 {symbol} 的预训练模型")
             
             X = getattr(self, f'_pretrain_{symbol}_X')
             y = getattr(self, f'_pretrain_{symbol}_y')
             
-            self.algorithm.log_debug('training', f"{symbol} 训练数据形状: X={X.shape}, y={y.shape}", log_type="training")
+            self.algorithm.log_debug('training', f"{symbol} 训练数据形状: X={X.shape}, y={y.shape}")
             
             # 根据模式选择模型复杂度
             use_simple_model = not self.config.get('pretrain_strict_mode', True)
             
             # 获取特征维度（应该是24）
             feature_dim = X.shape[2] if len(X.shape) > 2 else 1
-            self.algorithm.log_debug('training', f"{symbol} 检测到特征维度: {feature_dim}", log_type="training")
+            self.algorithm.log_debug('training', f"{symbol} 检测到特征维度: {feature_dim}")
             
             if use_simple_model:
-                self.algorithm.log_debug('training', f"{symbol} 使用简化模型架构", log_type="training")
+                self.algorithm.log_debug('training', f"{symbol} 使用简化模型架构")
                 # 简化模型架构 - 适配多特征输入
                 input_layer = Input(shape=(X.shape[1], feature_dim))
                 lstm = LSTM(units=32, return_sequences=False, dropout=0.1)(input_layer)
@@ -324,7 +324,7 @@ class AdvancedTrainingManager:
                 model = Model(inputs=input_layer, outputs=output)
                 epochs = 10  # 简化模式使用较少epochs
             else:
-                self.algorithm.log_debug('training', f"{symbol} 使用完整模型架构", log_type="training")
+                self.algorithm.log_debug('training', f"{symbol} 使用完整模型架构")
                 # 构建更深的预训练模型 - 适配多特征输入
                 input_layer = Input(shape=(X.shape[1], feature_dim))
                 
@@ -352,7 +352,7 @@ class AdvancedTrainingManager:
                 model = Model(inputs=input_layer, outputs=output)
                 epochs = 50  # 完整模式使用更多epochs
             
-            self.algorithm.log_debug('training', f"{symbol} 模型架构构建完成，开始编译", log_type="training")
+            self.algorithm.log_debug('training', f"{symbol} 模型架构构建完成，开始编译")
             
             model.compile(
                 optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
@@ -360,7 +360,7 @@ class AdvancedTrainingManager:
                 metrics=['mae']
             )
             
-            self.algorithm.log_debug('training', f"{symbol} 开始训练模型: {epochs} epochs", log_type="training")
+            self.algorithm.log_debug('training', f"{symbol} 开始训练模型: {epochs} epochs")
             
             # 训练模型
             start_train_time = time.time()
@@ -377,7 +377,7 @@ class AdvancedTrainingManager:
             )
             
             train_time = time.time() - start_train_time
-            self.algorithm.log_debug('training', f"{symbol} 模型训练完成，用时{train_time:.1f}秒", log_type="training")
+            self.algorithm.log_debug('training', f"{symbol} 模型训练完成，用时{train_time:.1f}秒")
             
                         # 保存模型
             self.lstm_models[symbol] = model
@@ -385,7 +385,7 @@ class AdvancedTrainingManager:
             # 更新可交易股票列表
             if symbol not in self.tradable_symbols:
                 self.tradable_symbols.append(symbol)
-                self.algorithm.log_debug('training', f"添加到可交易列表: {symbol}", log_type="training")
+                self.algorithm.log_debug('training', f"添加到可交易列表: {symbol}")
             
             # 清理预训练数据  
             delattr(self, f'_pretrain_{symbol}_X')
@@ -394,7 +394,7 @@ class AdvancedTrainingManager:
             return True
     
         except Exception as e:
-            self.algorithm.log_debug('training', f"构建预训练模型 {symbol} 失败: {e}", log_type="training")
+            self.algorithm.log_debug('training', f"构建预训练模型 {symbol} 失败: {e}")
             return False
     
     def should_perform_training(self):
@@ -478,44 +478,44 @@ class AdvancedTrainingManager:
     def _perform_fast_training(self):
         """执行快速训练（交易时间）"""
         try:
-            self.algorithm.log_debug('training', "开始快速增量训练...", log_type="training")
+            self.algorithm.log_debug('training', "开始快速增量训练...")
             fast_start = time.time()
             successful_updates = 0
             max_time = self.config['fast_mode_max_training']
             if not self.lstm_models:
-                self.algorithm.log_debug('training', "警告: 没有预训练模型，尝试快速基础训练", log_type="training")
+                self.algorithm.log_debug('training', "警告: 没有预训练模型，尝试快速基础训练")
                 return self._perform_emergency_training()
             for symbol in self.algorithm.config.SYMBOLS:
                 if time.time() - fast_start > max_time:
                     break
                 try:
                     if symbol not in self.lstm_models:
-                        self.algorithm.log_debug('training', f"跳过 {symbol}: 无预训练模型", log_type="training")
+                        self.algorithm.log_debug('training', f"跳过 {symbol}: 无预训练模型")
                         continue
                     # 快速训练时，指标计算需求最少60天
                     if self._perform_incremental_update(symbol, min_days=60):
                         successful_updates += 1
-                        self.algorithm.log_debug('training', f"成功更新 {symbol}", log_type="training")
+                        self.algorithm.log_debug('training', f"成功更新 {symbol}")
                         if symbol not in self.tradable_symbols:
                             self.tradable_symbols.append(symbol)
                     else:
-                        self.algorithm.log_debug('training', f"更新失败 {symbol}: 数据不足或处理错误", log_type="training")
+                        self.algorithm.log_debug('training', f"更新失败 {symbol}: 数据不足或处理错误")
                 except Exception as symbol_error:
-                    self.algorithm.log_debug('training', f"处理 {symbol} 时发生错误: {symbol_error}", log_type="training")
+                    self.algorithm.log_debug('training', f"处理 {symbol} 时发生错误: {symbol_error}")
                     continue
             total_time = time.time() - fast_start
-            self.algorithm.log_debug('training', f"快速训练完成: {successful_updates}个更新, 用时{total_time:.1f}秒", log_type="training")
-            self.algorithm.log_debug('training', f"当前可交易股票: {self.tradable_symbols} (共{len(self.tradable_symbols)}个)", log_type="training")
+            self.algorithm.log_debug('training', f"快速训练完成: {successful_updates}个更新, 用时{total_time:.1f}秒")
+            self.algorithm.log_debug('training', f"当前可交易股票: {self.tradable_symbols} (共{len(self.tradable_symbols)}个)")
             if successful_updates > 0:
                 self.update_algorithm_models()
-                self.algorithm.log_debug('training', "增量训练模型已同步到主算法", log_type="training")
+                self.algorithm.log_debug('training', "增量训练模型已同步到主算法")
             if successful_updates == 0:
-                self.algorithm.log_debug('training', "所有增量更新失败，尝试备用快速训练", log_type="training")
+                self.algorithm.log_debug('training', "所有增量更新失败，尝试备用快速训练")
                 return self._perform_emergency_training()
             self.last_training_time = self.algorithm.Time
             return successful_updates > 0
         except Exception as e:
-            self.algorithm.log_debug('training', f"快速训练失败: {e}", log_type="training")
+            self.algorithm.log_debug('training', f"快速训练失败: {e}")
             return False
     
     def _perform_incremental_update(self, symbol, min_days=60):
@@ -529,10 +529,10 @@ class AdvancedTrainingManager:
                     continue
                 recent_data = self._get_recent_data(symbol, days=trading_days)
                 if recent_data is not None and len(recent_data) >= min_days:
-                    self.algorithm.log_debug('training', f"成功获取 {symbol} {len(recent_data)}个交易日数据（请求{trading_days}天）", log_type="training")
+                    self.algorithm.log_debug('training', f"成功获取 {symbol} {len(recent_data)}个交易日数据（请求{trading_days}天）")
                     break
             if recent_data is None or len(recent_data) < min_days:
-                self.algorithm.log_debug('training', f"获取 {symbol} 历史数据失败，尝试紧急模型构建", log_type="training")
+                self.algorithm.log_debug('training', f"获取 {symbol} 历史数据失败，尝试紧急模型构建")
                 # 备用方案1：尝试构建紧急模型
                 return self._try_emergency_model_for_symbol(symbol)
             
@@ -542,30 +542,30 @@ class AdvancedTrainingManager:
                 if success:
                     return True
                 else:
-                    self.algorithm.log_debug('training', f"增量更新失败，尝试重建模型: {symbol}", log_type="training")
+                    self.algorithm.log_debug('training', f"增量更新失败，尝试重建模型: {symbol}")
                     # 备用方案2：增量更新失败时重建模型
                     return self._try_emergency_model_for_symbol(symbol)
             
             # 备用方案3：没有预训练模型时构建新模型
-            self.algorithm.log_debug('training', f"无预训练模型，构建新模型: {symbol}", log_type="training")
+            self.algorithm.log_debug('training', f"无预训练模型，构建新模型: {symbol}")
             return self._try_emergency_model_for_symbol(symbol)
             
         except Exception as e:
-            self.algorithm.log_debug('training', f"增量更新 {symbol} 异常: {e}", log_type="training")
+            self.algorithm.log_debug('training', f"增量更新 {symbol} 异常: {e}")
             # 备用方案4：异常时尝试紧急模型
             return self._try_emergency_model_for_symbol(symbol)
     
     def _perform_emergency_training(self):
         """紧急快速训练 - 当没有预训练模型时使用（增强版）"""
         try:
-            self.algorithm.log_debug('training', "开始增强紧急训练...", log_type="training")
+            self.algorithm.log_debug('training', "开始增强紧急训练...")
             emergency_start = time.time()
             successful_models = 0
             max_emergency_time = 300  # 增加到5分钟紧急训练限制
             
             for symbol in self.algorithm.config.SYMBOLS:
                 if time.time() - emergency_start > max_emergency_time:
-                    self.algorithm.log_debug('training', "紧急训练时间限制，停止训练", log_type="training")
+                    self.algorithm.log_debug('training', "紧急训练时间限制，停止训练")
                     break
                 
                 try:
@@ -578,31 +578,31 @@ class AdvancedTrainingManager:
                             
                             if len(history_list) >= 30:  # 降低最小要求到30天
                                 history_data = np.array([x.Close for x in history_list])
-                                self.algorithm.log_debug('training', f"{symbol}: 获得{len(history_data)}天历史数据", log_type="training")
+                                self.algorithm.log_debug('training', f"{symbol}: 获得{len(history_data)}天历史数据")
                                 break
                         except Exception:
                             continue
                     
                     if history_data is None:
-                        self.algorithm.log_debug('training', f"跳过 {symbol}: 无法获取历史数据", log_type="training")
+                        self.algorithm.log_debug('training', f"跳过 {symbol}: 无法获取历史数据")
                         continue
                     
                     # 快速构建简单模型
                     if self._build_emergency_model(symbol, history_data):
                         successful_models += 1
-                        self.algorithm.log_debug('training', f"紧急模型构建成功: {symbol}", log_type="training")
+                        self.algorithm.log_debug('training', f"紧急模型构建成功: {symbol}")
                     
                 except Exception as symbol_error:
-                    self.algorithm.log_debug('training', f"紧急训练 {symbol} 失败: {symbol_error}", log_type="training")
+                    self.algorithm.log_debug('training', f"紧急训练 {symbol} 失败: {symbol_error}")
                     continue
             
             total_time = time.time() - emergency_start
-            self.algorithm.log_debug('training', f"紧急训练完成: {successful_models}个模型, 用时{total_time:.1f}秒", log_type="training")
+            self.algorithm.log_debug('training', f"紧急训练完成: {successful_models}个模型, 用时{total_time:.1f}秒")
             
             return successful_models > 0
             
         except Exception as e:
-            self.algorithm.log_debug('training', f"紧急训练失败: {e}", log_type="training")
+            self.algorithm.log_debug('training', f"紧急训练失败: {e}")
             return False
     
     def _try_emergency_model_for_symbol(self, symbol):
@@ -615,7 +615,7 @@ class AdvancedTrainingManager:
                     # 转换为日历天数（交易日 * 1.4 约等于日历天数）
                     calendar_days = int(trading_days * 1.4)
                     
-                    self.algorithm.log_debug('training', f"尝试获取 {symbol} {trading_days}个交易日数据（{calendar_days}个日历天数）", log_type="training")
+                    self.algorithm.log_debug('training', f"尝试获取 {symbol} {trading_days}个交易日数据（{calendar_days}个日历天数）")
                     
                     history = self.algorithm.History(symbol, calendar_days, Resolution.Daily)
                     history_list = list(history)
@@ -629,20 +629,20 @@ class AdvancedTrainingManager:
                             prices = prices[-trading_days:]
                         
                         if self._build_emergency_model(symbol, prices):
-                            self.algorithm.log_debug('training', f"紧急模型构建成功: {symbol} (使用{len(prices)}个交易日数据)", log_type="training")
+                            self.algorithm.log_debug('training', f"紧急模型构建成功: {symbol} (使用{len(prices)}个交易日数据)")
                             return True
                         else:
-                            self.algorithm.log_debug('training', f"紧急模型构建失败: {symbol} (数据长度: {len(prices)})", log_type="training")
+                            self.algorithm.log_debug('training', f"紧急模型构建失败: {symbol} (数据长度: {len(prices)})")
                             
                 except Exception as history_error:
-                    self.algorithm.log_debug('training', f"获取{trading_days}个交易日历史数据失败 {symbol}: {history_error}", log_type="training")
+                    self.algorithm.log_debug('training', f"获取{trading_days}个交易日历史数据失败 {symbol}: {history_error}")
                     continue
             
-            self.algorithm.log_debug('training', f"所有紧急模型构建尝试失败: {symbol}", log_type="training")
+            self.algorithm.log_debug('training', f"所有紧急模型构建尝试失败: {symbol}")
             return False
             
         except Exception as e:
-            self.algorithm.log_debug('training', f"紧急模型构建异常 {symbol}: {e}", log_type="training")
+            self.algorithm.log_debug('training', f"紧急模型构建异常 {symbol}: {e}")
             return False
 
     def _build_emergency_model(self, symbol, prices):
@@ -650,22 +650,22 @@ class AdvancedTrainingManager:
         try:
             # 使用24维特征矩阵，保持与预训练的一致性
             if not hasattr(self.algorithm, 'data_processor') or self.algorithm.data_processor is None:
-                self.algorithm.log_debug('training', f"数据处理器不可用 {symbol}，无法创建特征矩阵", log_type="training")
+                self.algorithm.log_debug('training', f"数据处理器不可用 {symbol}，无法创建特征矩阵")
                 return False
             
             try:
                 # 创建24维特征矩阵
                 feature_matrix = self.algorithm.data_processor.create_feature_matrix(prices)
                 if feature_matrix is None:
-                    self.algorithm.log_debug('training', f"特征矩阵创建失败 {symbol}", log_type="training")
+                    self.algorithm.log_debug('training', f"特征矩阵创建失败 {symbol}")
                     return False
                 
                 # 使用数据处理器进行缩放
                 prices_scaled = self.algorithm.data_processor.scale_data(feature_matrix, symbol, fit=True)
-                self.algorithm.log_debug('training', f"特征矩阵缩放成功 {symbol}: {prices_scaled.shape}", log_type="training")
+                self.algorithm.log_debug('training', f"特征矩阵缩放成功 {symbol}: {prices_scaled.shape}")
                 
             except Exception as feature_error:
-                self.algorithm.log_debug('training', f"特征矩阵处理失败 {symbol}: {feature_error}", log_type="training")
+                self.algorithm.log_debug('training', f"特征矩阵处理失败 {symbol}: {feature_error}")
                 return False
             
             # 动态调整lookback
@@ -673,7 +673,7 @@ class AdvancedTrainingManager:
             X, y = self.create_sequences(prices_scaled, lookback)
             
             if len(X) < 5:  # 降低最小序列要求
-                self.algorithm.log_debug('training', f"序列数量不足 {symbol}: {len(X)} < 5", log_type="training")
+                self.algorithm.log_debug('training', f"序列数量不足 {symbol}: {len(X)} < 5")
                 return False
             
             # 构建模型，使用24维特征
@@ -718,11 +718,11 @@ class AdvancedTrainingManager:
             if symbol not in self.tradable_symbols:
                 self.tradable_symbols.append(symbol)
             
-            self.algorithm.log_debug('training', f"紧急模型构建成功 {symbol}: {len(X)}序列, {epochs}epochs, lookback={lookback}", log_type="training")
+            self.algorithm.log_debug('training', f"紧急模型构建成功 {symbol}: {len(X)}序列, {epochs}epochs, lookback={lookback}")
             return True
             
         except Exception as e:
-            self.algorithm.log_debug('training', f"构建紧急模型 {symbol} 失败: {e}", log_type="training")
+            self.algorithm.log_debug('training', f"构建紧急模型 {symbol} 失败: {e}")
             return False
     
     def _clean_price_data(self, prices):
@@ -757,7 +757,7 @@ class AdvancedTrainingManager:
             # 经验公式：交易日 * 1.4 ≈ 日历天数（考虑周末和假期）
             calendar_days_needed = max(days * 2, days + 10)  # 至少增加10天缓冲
             
-            self.algorithm.log_debug(f"请求 {symbol} {days}个交易日数据，使用{calendar_days_needed}个日历天数", log_type="training")
+            self.algorithm.log_debug(f"请求 {symbol} {days}个交易日数据，使用{calendar_days_needed}个日历天数")
             
             # 方案1：尝试获取足够的日历天数来确保有足够的交易日
             try:
@@ -770,17 +770,17 @@ class AdvancedTrainingManager:
                     if len(prices) >= days and not np.any(np.isnan(prices)) and not np.any(np.isinf(prices)):
                         # 只取最近的指定天数
                         recent_prices = prices[-days:] if len(prices) > days else prices
-                        self.algorithm.log_debug(f"成功获取 {symbol} {len(recent_prices)}个交易日数据", log_type="training")
+                        self.algorithm.log_debug(f"成功获取 {symbol} {len(recent_prices)}个交易日数据")
                         return recent_prices
                 else:
-                    self.algorithm.log_debug(f"数据不足 {symbol}: 需要{days}天，实际获得{len(history_list)}天", log_type="training")
+                    self.algorithm.log_debug(f"数据不足 {symbol}: 需要{days}天，实际获得{len(history_list)}天")
             except Exception as daily_error:
-                self.algorithm.log_debug(f"获取日线数据失败 {symbol}: {daily_error}", log_type="training")
+                self.algorithm.log_debug(f"获取日线数据失败 {symbol}: {daily_error}")
             
             # 方案2：如果还是不够，尝试更长的时间窗口
             try:
                 extended_days = calendar_days_needed * 2  # 进一步扩大时间窗口
-                self.algorithm.log_debug(f"尝试扩展时间窗口到{extended_days}天", log_type="training")
+                self.algorithm.log_debug(f"尝试扩展时间窗口到{extended_days}天")
                 
                 history = self.algorithm.History(symbol, extended_days, Resolution.Daily)
                 history_list = list(history)
@@ -789,10 +789,10 @@ class AdvancedTrainingManager:
                     prices = np.array([x.Close for x in history_list])
                     if len(prices) >= days and not np.any(np.isnan(prices)) and not np.any(np.isinf(prices)):
                         recent_prices = prices[-days:]
-                        self.algorithm.log_debug(f"扩展窗口成功获取 {symbol} {len(recent_prices)}个交易日数据", log_type="training")
+                        self.algorithm.log_debug(f"扩展窗口成功获取 {symbol} {len(recent_prices)}个交易日数据")
                         return recent_prices
             except Exception as extended_error:
-                self.algorithm.log_debug(f"扩展时间窗口失败 {symbol}: {extended_error}", log_type="training")
+                self.algorithm.log_debug(f"扩展时间窗口失败 {symbol}: {extended_error}")
             
             # 方案3：尝试获取小时数据并降采样
             try:
@@ -808,10 +808,10 @@ class AdvancedTrainingManager:
                         daily_prices = prices[7::8] if len(prices) >= 8 else prices[::max(1, len(prices)//days)]
                         if len(daily_prices) >= days:
                             recent_prices = daily_prices[-days:]
-                            self.algorithm.log_debug(f"小时数据降采样成功 {symbol}: {len(recent_prices)}个数据点", log_type="training")
+                            self.algorithm.log_debug(f"小时数据降采样成功 {symbol}: {len(recent_prices)}个数据点")
                             return recent_prices
             except Exception as hour_error:
-                self.algorithm.log_debug(f"获取小时数据失败 {symbol}: {hour_error}", log_type="training")
+                self.algorithm.log_debug(f"获取小时数据失败 {symbol}: {hour_error}")
             
             # 方案4：尝试从当前持仓获取价格信息（作为最后备用）
             try:
@@ -827,10 +827,10 @@ class AdvancedTrainingManager:
                             synthetic_prices.append(current_price + price_change * i)
                         
                         synthetic_prices = np.array(synthetic_prices)
-                        self.algorithm.log_debug(f"使用合成价格数据 {symbol}: {len(synthetic_prices)}个数据点", log_type="training")
+                        self.algorithm.log_debug(f"使用合成价格数据 {symbol}: {len(synthetic_prices)}个数据点")
                         return synthetic_prices
             except Exception as portfolio_error:
-                self.algorithm.log_debug(f"从投资组合获取价格失败 {symbol}: {portfolio_error}", log_type="training")
+                self.algorithm.log_debug(f"从投资组合获取价格失败 {symbol}: {portfolio_error}")
             
             # 方案5：尝试从数据slice获取当前价格
             try:
@@ -846,16 +846,16 @@ class AdvancedTrainingManager:
                                 synthetic_prices.append(current_price + price_change)
                             
                             synthetic_prices = np.array(synthetic_prices)
-                            self.algorithm.log_debug(f"使用当前数据价格 {symbol}: {current_price}", log_type="training")
+                            self.algorithm.log_debug(f"使用当前数据价格 {symbol}: {current_price}")
                             return synthetic_prices
             except Exception as slice_error:
-                self.algorithm.log_debug(f"从数据slice获取价格失败 {symbol}: {slice_error}", log_type="training")
+                self.algorithm.log_debug(f"从数据slice获取价格失败 {symbol}: {slice_error}")
             
-            self.algorithm.log_debug(f"所有数据获取方案失败 {symbol}", log_type="training")
+            self.algorithm.log_debug(f"所有数据获取方案失败 {symbol}")
             return None
             
         except Exception as e:
-            self.algorithm.log_debug(f"获取数据异常 {symbol}: {e}", log_type="training")
+            self.algorithm.log_debug(f"获取数据异常 {symbol}: {e}")
             return None
     
     def _update_model_incrementally(self, symbol, recent_prices):
@@ -873,15 +873,15 @@ class AdvancedTrainingManager:
                         prices_scaled = self.algorithm.data_processor.scale_data(
                             feature_matrix, symbol, fit=False
                         )
-                        self.algorithm.log_debug(f"特征矩阵缩放成功 {symbol}: {prices_scaled.shape}", log_type="training")
+                        self.algorithm.log_debug(f"特征矩阵缩放成功 {symbol}: {prices_scaled.shape}")
                     else:
-                        self.algorithm.log_debug(f"特征矩阵创建失败 {symbol}", log_type="training")
+                        self.algorithm.log_debug(f"特征矩阵创建失败 {symbol}")
                 except Exception as scale_error:
-                    self.algorithm.log_debug(f"特征矩阵处理失败 {symbol}: {scale_error}", log_type="training")
+                    self.algorithm.log_debug(f"特征矩阵处理失败 {symbol}: {scale_error}")
             
             # 方案2：如果特征矩阵创建失败，返回False
             if prices_scaled is None:
-                self.algorithm.log_debug(f"无法创建24维特征矩阵 {symbol}，跳过增量更新", log_type="training")
+                self.algorithm.log_debug(f"无法创建24维特征矩阵 {symbol}，跳过增量更新")
                 return False
             
             # 动态调整lookback
@@ -893,14 +893,14 @@ class AdvancedTrainingManager:
             expected_shape = model.input_shape
             expected_lookback = expected_shape[1]  # 期望的序列长度
             
-            self.algorithm.log_debug(f"模型期望输入形状 {symbol}: {expected_shape}, 需要lookback={expected_lookback}", log_type="training")
+            self.algorithm.log_debug(f"模型期望输入形状 {symbol}: {expected_shape}, 需要lookback={expected_lookback}")
             
             # 优先尝试匹配原始模型的lookback
             lookback_candidates = [expected_lookback]
             
             # 如果数据不足，尝试数据填充或其他策略
             if data_length <= expected_lookback:
-                self.algorithm.log_debug(f"数据长度不足 {symbol}: {data_length} <= {expected_lookback}，尝试数据填充", log_type="training")
+                self.algorithm.log_debug(f"数据长度不足 {symbol}: {data_length} <= {expected_lookback}，尝试数据填充")
                 
                 # 方案1：数据填充（重复最后几个值）
                 if data_length >= 5:
@@ -909,7 +909,7 @@ class AdvancedTrainingManager:
                     padding = np.tile(last_values, (padding_needed // 3 + 1, 1))[:padding_needed]
                     prices_scaled_padded = np.vstack([padding, prices_scaled])
                     
-                    self.algorithm.log_debug(f"数据填充 {symbol}: {data_length} -> {len(prices_scaled_padded)}", log_type="training")
+                    self.algorithm.log_debug(f"数据填充 {symbol}: {data_length} -> {len(prices_scaled_padded)}")
                     
                     # 使用填充后的数据
                     X_new, y_new = self.create_sequences(prices_scaled_padded, expected_lookback)
@@ -928,14 +928,14 @@ class AdvancedTrainingManager:
                                 verbose=0
                             )
                             
-                            self.algorithm.log_debug(f"增量更新成功(填充数据) {symbol}: {len(X_new)}序列, epochs={epochs}", log_type="training")
+                            self.algorithm.log_debug(f"增量更新成功(填充数据) {symbol}: {len(X_new)}序列, epochs={epochs}")
                             return True
                             
                         except Exception as train_error:
-                            self.algorithm.log_debug(f"填充数据训练失败 {symbol}: {train_error}", log_type="training")
+                            self.algorithm.log_debug(f"填充数据训练失败 {symbol}: {train_error}")
                 
                 # 方案2：如果填充也失败，返回False让上层处理
-                self.algorithm.log_debug(f"数据填充方案失败 {symbol}", log_type="training")
+                self.algorithm.log_debug(f"数据填充方案失败 {symbol}")
                 return False
             
             # 如果数据足够，尝试使用期望的lookback
@@ -948,7 +948,7 @@ class AdvancedTrainingManager:
                         if len(X_new) >= 1:
                             # 验证模型输入形状兼容性
                             if X_new.shape[1:] != expected_shape[1:]:
-                                self.algorithm.log_debug(f"输入形状仍不匹配 {symbol}: {X_new.shape[1:]} vs {expected_shape[1:]}", log_type="training")
+                                self.algorithm.log_debug(f"输入形状仍不匹配 {symbol}: {X_new.shape[1:]} vs {expected_shape[1:]}")
                                 continue
                             
                             # 动态调整训练参数
@@ -967,18 +967,18 @@ class AdvancedTrainingManager:
                             if lookback != original_lookback:
                                 self.effective_lookbacks[symbol] = lookback
                             
-                            self.algorithm.log_debug(f"增量更新成功 {symbol}: {len(X_new)}序列, lookback={lookback}, epochs={epochs}", log_type="training")
+                            self.algorithm.log_debug(f"增量更新成功 {symbol}: {len(X_new)}序列, lookback={lookback}, epochs={epochs}")
                             return True
                             
                     except Exception as sequence_error:
-                        self.algorithm.log_debug(f"序列创建失败 {symbol} (lookback={lookback}): {sequence_error}", log_type="training")
+                        self.algorithm.log_debug(f"序列创建失败 {symbol} (lookback={lookback}): {sequence_error}")
                         continue
             
-            self.algorithm.log_debug(f"所有lookback尝试失败 {symbol}", log_type="training")
+            self.algorithm.log_debug(f"所有lookback尝试失败 {symbol}")
             return False
             
         except Exception as e:
-            self.algorithm.log_debug(f"增量更新异常 {symbol}: {e}", log_type="training")
+            self.algorithm.log_debug(f"增量更新异常 {symbol}: {e}")
             return False
     
     def create_sequences(self, data, seq_length):
@@ -1027,7 +1027,7 @@ class AdvancedTrainingManager:
                     }
                     self.algorithm.model_trainer.models[symbol] = model_info
                 
-                self.algorithm.log_debug(f"同步了{len(self.lstm_models)}个预训练模型到ModelTrainer", log_type="training")
+                self.algorithm.log_debug(f"同步了{len(self.lstm_models)}个预训练模型到ModelTrainer")
                 
                 # 也同步到multi_horizon_model
                 if hasattr(self.algorithm.model_trainer, 'multi_horizon_model'):
@@ -1042,7 +1042,7 @@ class AdvancedTrainingManager:
                         self.algorithm.model_trainer.multi_horizon_model.models[symbol] = model_info
                 
             except Exception as sync_error:
-                self.algorithm.log_debug(f"同步模型到ModelTrainer失败: {sync_error}", log_type="training")
+                self.algorithm.log_debug(f"同步模型到ModelTrainer失败: {sync_error}")
     
     def _cache_models(self):
         """缓存模型到ObjectStore"""
@@ -1063,7 +1063,7 @@ class AdvancedTrainingManager:
                         'feature_range': scaler.feature_range
                     }
                 except Exception as scaler_error:
-                    self.algorithm.log_debug(f"序列化scaler {symbol} 失败: {scaler_error}", log_type="training")
+                    self.algorithm.log_debug(f"序列化scaler {symbol} 失败: {scaler_error}")
                     continue
             
             cache_data = {
@@ -1083,7 +1083,7 @@ class AdvancedTrainingManager:
                         'architecture': model.to_json()
                     }
                 except Exception as model_error:
-                    self.algorithm.log_debug(f"缓存模型 {symbol} 失败: {model_error}", log_type="training")
+                    self.algorithm.log_debug(f"缓存模型 {symbol} 失败: {model_error}")
                     continue
             
             # 使用ObjectStore保存缓存数据
@@ -1096,12 +1096,12 @@ class AdvancedTrainingManager:
             success = self.algorithm.ObjectStore.Save(cache_key, cache_json)
             
             if success:
-                self.algorithm.log_debug(f"模型缓存已保存到ObjectStore: {len(cache_data['models'])}个模型", log_type="training")
+                self.algorithm.log_debug(f"模型缓存已保存到ObjectStore: {len(cache_data['models'])}个模型")
             else:
-                self.algorithm.log_debug("模型缓存保存到ObjectStore失败", log_type="training")
+                self.algorithm.log_debug("模型缓存保存到ObjectStore失败")
             
         except Exception as e:
-            self.algorithm.log_debug(f"模型缓存失败: {e}", log_type="training")
+            self.algorithm.log_debug(f"模型缓存失败: {e}")
     
     def _load_cached_models(self):
         """从ObjectStore加载缓存的模型"""
@@ -1110,14 +1110,14 @@ class AdvancedTrainingManager:
             
             # 检查ObjectStore中是否存在缓存
             if not self.algorithm.ObjectStore.ContainsKey(cache_key):
-                self.algorithm.log_debug("ObjectStore中未找到缓存的预训练模型", log_type="training")
+                self.algorithm.log_debug("ObjectStore中未找到缓存的预训练模型")
                 return False
             
             # 从ObjectStore读取缓存数据
             cache_json = self.algorithm.ObjectStore.Read(cache_key)
             
             if not cache_json:
-                self.algorithm.log_debug("从ObjectStore读取缓存数据失败", log_type="training")
+                self.algorithm.log_debug("从ObjectStore读取缓存数据失败")
                 return False
             
             # 解析JSON数据
@@ -1126,7 +1126,7 @@ class AdvancedTrainingManager:
             # 检查缓存有效性（例如：不超过一周）
             cache_time = datetime.fromisoformat(cache_data['cache_time'])
             if (self.algorithm.Time - cache_time).days > 7:
-                self.algorithm.log_debug("缓存模型过期，将重新训练", log_type="training")
+                self.algorithm.log_debug("缓存模型过期，将重新训练")
                 return False
             
             # 重建模型
@@ -1151,7 +1151,7 @@ class AdvancedTrainingManager:
                     models_loaded += 1
                     
                 except Exception as model_error:
-                    self.algorithm.log_debug(f"加载模型 {symbol} 失败: {model_error}", log_type="training")
+                    self.algorithm.log_debug(f"加载模型 {symbol} 失败: {model_error}")
                     continue
             
             # 恢复scalers（重建MinMaxScaler对象）
@@ -1177,28 +1177,28 @@ class AdvancedTrainingManager:
                     restored_scalers[symbol] = scaler
                     
                 except Exception as scaler_restore_error:
-                    self.algorithm.log_debug(f"恢复scaler {symbol} 失败: {scaler_restore_error}", log_type="training")
+                    self.algorithm.log_debug(f"恢复scaler {symbol} 失败: {scaler_restore_error}")
                     continue
             
             self.algorithm.data_processor.scalers = restored_scalers
             self.effective_lookbacks = cache_data.get('effective_lookbacks', {})
             self.tradable_symbols = cache_data.get('tradable_symbols', [])
             
-            self.algorithm.log_debug(f"成功从ObjectStore加载 {models_loaded} 个缓存模型", log_type="training")
+            self.algorithm.log_debug(f"成功从ObjectStore加载 {models_loaded} 个缓存模型")
             return models_loaded > 0
             
         except Exception as e:
-            self.algorithm.log_debug(f"从ObjectStore加载缓存模型失败: {e}", log_type="training")
+            self.algorithm.log_debug(f"从ObjectStore加载缓存模型失败: {e}")
             return False
 
     def _schedule_weekend_training(self):
         """设置周末训练调度"""
         try:
-            self.algorithm.log_debug("周末训练调度已设置", log_type="training")
+            self.algorithm.log_debug("周末训练调度已设置")
             # 这里可以添加更复杂的调度逻辑
             return True
         except Exception as e:
-            self.algorithm.log_debug(f"设置周末训练调度失败: {e}", log_type="training")
+            self.algorithm.log_debug(f"设置周末训练调度失败: {e}")
             return False
     
     def _start_async_training(self):
@@ -1207,14 +1207,14 @@ class AdvancedTrainingManager:
             if self.background_training_thread is not None and self.background_training_thread.is_alive():
                 return
             
-            self.algorithm.log_debug("异步训练线程已设置（暂时禁用以避免资源冲突）", log_type="training")
+            self.algorithm.log_debug("异步训练线程已设置（暂时禁用以避免资源冲突）")
             # 暂时注释掉异步训练，避免在QuantConnect环境中的资源冲突
             # self.background_training_thread = threading.Thread(target=self._async_training_loop)
             # self.background_training_thread.daemon = True
             # self.background_training_thread.start()
             
         except Exception as e:
-            self.algorithm.log_debug(f"启动异步训练失败: {e}", log_type="training")
+            self.algorithm.log_debug(f"启动异步训练失败: {e}")
     
     def _async_training_loop(self):
         """异步训练循环（暂时禁用）"""
@@ -1230,27 +1230,27 @@ class AdvancedTrainingManager:
             # 测试保存
             save_success = self.algorithm.ObjectStore.Save(test_key, test_data)
             if not save_success:
-                self.algorithm.log_debug("ObjectStore保存测试失败", log_type="training")
+                self.algorithm.log_debug("ObjectStore保存测试失败")
                 return False
             
             # 测试读取
             if not self.algorithm.ObjectStore.ContainsKey(test_key):
-                self.algorithm.log_debug("ObjectStore键检查失败", log_type="training")
+                self.algorithm.log_debug("ObjectStore键检查失败")
                 return False
             
             read_data = self.algorithm.ObjectStore.Read(test_key)
             if read_data != test_data:
-                self.algorithm.log_debug("ObjectStore读取测试失败", log_type="training")
+                self.algorithm.log_debug("ObjectStore读取测试失败")
                 return False
             
             # 清理测试数据
             self.algorithm.ObjectStore.Delete(test_key)
             
-            self.algorithm.log_debug("ObjectStore连接测试成功", log_type="training")
+            self.algorithm.log_debug("ObjectStore连接测试成功")
             return True
             
         except Exception as e:
-            self.algorithm.log_debug(f"ObjectStore连接测试失败: {e}", log_type="training")
+            self.algorithm.log_debug(f"ObjectStore连接测试失败: {e}")
             return False
 
 
@@ -1260,7 +1260,7 @@ class TrainingManager(AdvancedTrainingManager):
     
     def __init__(self, algorithm):
         super().__init__(algorithm)
-        self.algorithm.log_debug("使用高级训练管理器（兼容模式）", log_type="training")
+        self.algorithm.log_debug("使用高级训练管理器（兼容模式）")
     
     def should_retrain(self):
         """兼容性方法"""

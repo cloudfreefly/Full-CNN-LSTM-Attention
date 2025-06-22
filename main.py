@@ -913,11 +913,17 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
     def log_debug(self, message, log_type="general"):
         """增强的调试日志方法 - 添加消息限流"""
         try:
+            # 临时调试：先尝试直接输出，如果失败再使用复杂逻辑
+            if hasattr(self, '_simple_log_mode') and self._simple_log_mode:
+                prefix = f"[{self.time.strftime('%H:%M:')}] {log_type}: " if log_type != "general" else f"[{self.time.strftime('%H:%M:')}] "
+                self.log(f"{prefix}{message}")
+                return
+            
             # 获取消息控制配置
             message_config = self.config.MESSAGE_CONTROL_CONFIG
             
             # 检查是否启用限流
-            if message_config.get('enable_rate_limiting', True):
+            if message_config.get('enable_rate_limiting', False):
                 current_time = self.time  # 使用算法时间
                 
                 # 初始化消息计数器

@@ -181,9 +181,9 @@ class MultiHorizonModel:
                 return None
             
             # 数据质量检查
-            quality_metrics = DataValidator.check_data_quality(feature_matrix, symbol)
-            if quality_metrics['missing_ratio'] > self.config.DATA_QUALITY_CONFIG['max_missing_ratio']:
-                self.algorithm.log_debug(f"Data quality too poor for {symbol}: missing ratio {quality_metrics['missing_ratio']:.2%}", log_type='training')
+            is_valid, message = DataValidator.check_data_quality(feature_matrix, symbol)
+            if not is_valid:
+                self.algorithm.log_debug(f"Data quality check failed for {symbol}: {message}", log_type='training')
                 # 恢复原始特征模式
                 data_processor.enable_fixed_24_features(False)
                 return None
@@ -569,7 +569,7 @@ class ModelTrainer:
     def train_all_models(self):
         """训练所有股票的模型"""
         try:
-            self.algorithm.log_debug('training', "=== Starting model training for all symbols ===", log_type="training")
+            self.algorithm.log_debug("=== Starting model training for all symbols ===", log_type="training")
             
             # 清理现有模型
             try:

@@ -50,13 +50,13 @@ class AlgorithmConfig:
     
     # 新增：消息控制配置
     MESSAGE_CONTROL_CONFIG = {
-        'enable_rate_limiting': True,        # 启用消息限流
-        'max_messages_per_minute': 100,      # 每分钟最大消息数
-        'debug_message_throttle': 0.1,       # 调试消息节流比例（10%）
-        'suppress_repetitive_messages': True, # 抑制重复消息
-        'max_repetitions': 3,                # 最大重复次数
-        'critical_only_mode': False,         # 仅关键消息模式
-        'log_consolidation': True,           # 日志合并
+        'enable_rate_limiting': False,        # 暂时关闭消息限流以调试日志问题
+        'max_messages_per_minute': 1000,      # 大幅提高每分钟最大消息数
+        'debug_message_throttle': 1.0,        # 调试消息节流比例改为100%（不丢弃）
+        'suppress_repetitive_messages': False, # 暂时关闭重复消息抑制
+        'max_repetitions': 10,                # 增加最大重复次数
+        'critical_only_mode': False,          # 仅关键消息模式
+        'log_consolidation': False,           # 关闭日志合并
     }
     
     # 新增：杠杆配置 - 支持150%最高持仓
@@ -162,7 +162,7 @@ class AlgorithmConfig:
         'enable_correlation_filter': False,       # 相关性筛选
         'enable_concentration_limits': False,     # 集中度限制
         'enable_diversification_enforcer': False, # 分散化强制执行
-        'enable_portfolio_optimization': False,   # 组合优化
+        'enable_portfolio_optimization': True,   # 组合优化
         'enable_hedging': True,                  # 对冲策略 - 启用！
         'enable_recovery_mechanism': True,       # 恢复机制
         
@@ -170,12 +170,12 @@ class AlgorithmConfig:
         'enable_mean_variance_optimization': True,    # 均值方差优化
         'enable_risk_parity_optimization': True,      # 风险平价优化
         'enable_max_diversification_optimization': True, # 最大分散化优化
-        'enable_equal_weight_fallback': True,         # 等权重备用策略
+        'enable_equal_weight_fallback': False,         # 等权重备用策略
         'disable_complex_optimization': False,        # 禁用复杂优化（直接等权重）
         
         # === VIX相关开关 ===
         'enable_vix_monitoring': True,           # VIX监控
-        'enable_vix_defensive_filter': True,    # VIX防御性筛选
+        'enable_vix_defensive_filter': False,    # VIX防御性筛选
         'enable_vix_panic_score': True,         # VIX恐慌评分
         'enable_vix_risk_adjustment': True,     # VIX风险调整
         'enable_vix_recovery_tracking': True,   # VIX恢复跟踪
@@ -263,7 +263,7 @@ class AlgorithmConfig:
         
         # === 杠杆相关风险控制 ===
         'leverage_max_drawdown': 0.12,       # 杠杆环境下最大回撤12%
-        'leverage_volatility_threshold': 0.25, # 使用杠杆时最大波动率阈值25%
+        'leverage_volatility_threshold': 0.20, # 使用杠杆时最大波动率阈值25%
         'leverage_stop_loss': -0.08,         # 杠杆止损阈值-8%
         'leverage_margin_call_level': 0.25,  # 保证金追缴水平25%
         'leverage_liquidation_level': 0.20,  # 强制平仓水平20%
@@ -272,7 +272,7 @@ class AlgorithmConfig:
         # VIX相关配置
         'vix_rapid_rise_threshold': 0.15,  # VIX快速上升阈值进一步降至15%（从20%）
         'vix_rapid_rise_period': 2,        # VIX快速上升检测周期缩短至2天（从3天）
-        'vix_extreme_level': 30,           # VIX极端水平进一步降至30（从35）
+        'vix_extreme_level': 25,           # VIX极端水平进一步降至30（从35）
         'vix_defense_min_equity': 0.30,    # VIX防御模式最小股票仓位30%（现金比例70%）
         'vix_defense_max_cash': 0.70,      # VIX防御模式最大现金比例70%
         'vix_hedging_allocation': 0.30,    # 对冲产品分配比例30%（防御模式基础）
@@ -440,7 +440,7 @@ class AlgorithmConfig:
     }
     
     LOGGING_CONFIG = {
-        'enable_detailed_logging': False,
+        'enable_detailed_logging': True,
         'log_to_file': True,
         'log_file_path': 'algorithm_log.txt',
         'max_log_file_size': 100,  # MB
@@ -454,8 +454,8 @@ class AlgorithmConfig:
         'date_format': '%Y-%m-%d %H:%M:%S',
         
         # === 日志延迟控制配置 ===
-        'enable_log_delay': False,  # 是否启用日志延迟（默认关闭）
-        'log_delay_ms': 20,         # 基础日志延迟时间（毫秒）
+        'enable_log_delay': False,  # 关闭日志延迟（原来是True）
+        'log_delay_ms': 0,         # 基础日志延迟时间设为0（原来是20毫秒）
         
         # 分类别日志延迟配置
         'category_delays': {
@@ -472,7 +472,7 @@ class AlgorithmConfig:
         
         # 动态延迟调整配置
         'dynamic_delay': {
-            'enable_dynamic_delay': True,    # 启用动态延迟调整
+            'enable_dynamic_delay': False,    # 启用动态延迟调整
             'min_delay_ms': 5,               # 最小延迟时间
             'max_delay_ms': 100,             # 最大延迟时间
             'high_frequency_threshold': 10,  # 高频日志阈值（每秒条数）
@@ -492,7 +492,7 @@ class AlgorithmConfig:
         
         # 延迟策略配置
         'delay_strategy': {
-            'strategy_type': 'adaptive',        # 延迟策略：'fixed'固定, 'adaptive'自适应, 'burst'突发控制
+            'strategy_type': 'fixed',        # 延迟策略：'fixed'固定, 'adaptive'自适应, 'burst'突发控制
             'burst_detection_window': 5,     # 突发检测窗口（秒）
             'burst_threshold': 20,           # 突发阈值（每窗口日志条数）
             'burst_delay_multiplier': 2.0,   # 突发延迟倍数

@@ -1,0 +1,1379 @@
+2008-06-03 00:00:00 Launching analysis for b53e65cc9c6968218e2b304a5f4f6311 with LEAN Engine v2.5.0.0.17150
+2008-06-03 00:00:00 VIX指数已添加到数据源
+2008-06-03 00:00:00 对冲产品 SQQQ 已添加到数据源
+2008-06-03 00:00:00 Accurate daily end-times now enabled by default. See more at https://qnt.co/3YHaWHL. To disable it and use legacy daily bars set self.settings.daily_precise_end_time = False.
+2008-06-03 00:00:00 Algorithm starting warm up...
+2008-06-03 00:00:00 [00:00:] data: Fixed 24-feature mode: enabled
+2008-06-03 00:00:00 [00:00:] 高级训练管理器初始化完成: training
+2008-06-03 00:00:00 [00:00:] ObjectStore连接测试成功
+2008-06-03 00:00:00 [00:00:] 周末训练调度已设置
+2008-06-03 00:00:00 [00:00:] 异步训练线程已设置（暂时禁用以避免资源冲突）
+2008-06-03 00:00:00 [00:00:] 训练系统基础初始化完成（预训练将在非交易时间进行）: training
+2008-06-03 00:00:00 [00:00:] optimization: 加载了 2008 条优化历史记录
+2008-06-03 00:00:00 [00:00:] optimization: 无法计算夏普比率，返回0
+2008-06-03 00:00:00 [00:00:] optimization: 无法计算夏普比率，返回0
+2008-06-03 00:00:00 [00:00:] optimization: 当前夏普比率为0.0，设置基准为-1.0
+2008-06-03 00:00:00 [00:00:] optimization: 自动优化系统初始化完成
+2008-06-03 00:00:00 [00:00:] system: 自动参数优化系统已启用
+2008-06-03 00:00:00 [00:00:] algorithm: All modules initialized
+2008-06-03 00:00:00 [00:00:] algorithm: 预训练已调度在非交易时间进行
+2008-06-03 00:00:00 [00:00:] algorithm: Multi-horizon trading algorithm initialized
+2008-06-03 00:00:00 [00:00:] algorithm: Multi-horizon trading algorithm initialized
+2008-06-03 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-03 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-03 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-03 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-03 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-03 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-03 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-03 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-03 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-03 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-03 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-03 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-03 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-03 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-04 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-04 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-04 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-04 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-04 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-04 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-04 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-04 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-04 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-04 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-04 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-04 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-04 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-04 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-05 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-05 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-05 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-05 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-05 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-05 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-05 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-05 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-05 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-05 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-05 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-05 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-05 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-05 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-06 10:00:00 [02:00:] optimization: 执行调度的参数优化...
+2008-06-06 10:00:00 [02:00:] optimization: 无法计算夏普比率，返回0
+2008-06-06 10:00:00 [02:00:] optimization: ============================================================
+2008-06-06 10:00:00 [02:00:] optimization: 开始运行参数优化...
+2008-06-06 10:00:00 [02:00:] optimization: 无法计算夏普比率，返回0
+2008-06-06 10:00:00 [02:00:] optimization: 当前性能状态:
+2008-06-06 10:00:00 [02:00:] optimization:   组合价值: $100,000.00
+2008-06-06 10:00:00 [02:00:] optimization:   总收益率: 0.00%
+2008-06-06 10:00:00 [02:00:] optimization:   现金比例: 1.00%
+2008-06-06 10:00:00 [02:00:] optimization:   杠杆比例: 0.00
+2008-06-06 10:00:00 [02:00:] optimization:   持仓数量: 0
+2008-06-06 10:00:00 [02:00:] optimization:   最大回撤: 0.00%
+2008-06-06 10:00:00 [02:00:] optimization:   夏普比率: 0.000
+2008-06-06 10:00:00 [02:00:] optimization: 无法计算夏普比率，返回0
+2008-06-06 10:00:00 [02:00:] optimization: 优化参数设置:
+2008-06-06 10:00:00 [02:00:] optimization:   VIX水平: 20.00
+2008-06-06 10:00:00 [02:00:] optimization:   市场波动率: 0.15%
+2008-06-06 10:00:00 [02:00:] optimization:   参数空间:
+2008-06-06 10:00:00 [02:00:] optimization:     max_drawdown: [0.06, 0.08, 0.1, 0.12]
+2008-06-06 10:00:00 [02:00:] optimization:     volatility_threshold: [0.18, 0.22, 0.25, 0.28]
+2008-06-06 10:00:00 [02:00:] optimization:     max_leverage_ratio: [1.0, 1.2, 1.5]
+2008-06-06 10:00:00 [02:00:] optimization:     target_portfolio_size: [8, 10, 12, 15]
+2008-06-06 10:00:00 [02:00:] optimization:     rebalance_tolerance: [0.003, 0.005, 0.01]
+2008-06-06 10:00:00 [02:00:] optimization: 开始random_search优化...
+2008-06-06 10:00:00 [02:00:] optimization: random_search优化完成:
+2008-06-06 10:00:00 [02:00:] optimization:   最佳参数: {'max_drawdown': 0.1, 'volatility_threshold': 0.25, 'max_leverage_ratio': 1.2, 'target_portfolio_size': 10, 'rebalance_tolerance': 0.01}
+2008-06-06 10:00:00 [02:00:] optimization:   最佳分数: 0.9140
+2008-06-06 10:00:00 [02:00:] optimization:   测试了20个参数组合
+2008-06-06 10:00:00 [02:00:] optimization:   前3名表现:
+2008-06-06 10:00:00 [02:00:] optimization:     #1: 夏普=0.9140, 收益=40.83%, 回撤=15.57%
+2008-06-06 10:00:00 [02:00:] optimization:          参数: {'max_drawdown': 0.1, 'volatility_threshold': 0.25, 'max_leverage_ratio': 1.2, 'target_portfolio_size': 10, 'rebalance_tolerance': 0.01}
+2008-06-06 10:00:00 [02:00:] optimization:     #2: 夏普=0.7515, 收益=25.71%, 回撤=22.18%
+2008-06-06 10:00:00 [02:00:] optimization:          参数: {'max_drawdown': 0.06, 'volatility_threshold': 0.22, 'max_leverage_ratio': 1.5, 'target_portfolio_size': 12, 'rebalance_tolerance': 0.003}
+2008-06-06 10:00:00 [02:00:] optimization:     #3: 夏普=0.7310, 收益=28.13%, 回撤=18.80%
+2008-06-06 10:00:00 [02:00:] optimization:          参数: {'max_drawdown': 0.12, 'volatility_threshold': 0.22, 'max_leverage_ratio': 1.2, 'target_portfolio_size': 12, 'rebalance_tolerance': 0.005}
+2008-06-06 10:00:00 [02:00:] optimization: 优化结果分析:
+2008-06-06 10:00:00 [02:00:] optimization:   当前基准夏普比率: -1.0000
+2008-06-06 10:00:00 [02:00:] optimization:   优化最佳夏普比率: 0.9140
+2008-06-06 10:00:00 [02:00:] optimization:   改进幅度: 1.9140
+2008-06-06 10:00:00 [02:00:] optimization: 发现性能改进！应用新配置
+2008-06-06 10:00:00 [02:00:] optimization:   绝对改进: 1.9140
+2008-06-06 10:00:00 [02:00:] optimization:   相对改进: 191.40%
+2008-06-06 10:00:00 [02:00:] optimization: 优化结果:
+2008-06-06 10:00:00 [02:00:] optimization:   测试配置数量: 1
+2008-06-06 10:00:00 [02:00:] optimization:   最高评分: 0.9140
+2008-06-06 10:00:00 [02:00:] optimization:   最低评分: 0.9140
+2008-06-06 10:00:00 [02:00:] optimization:   平均评分: 0.9140
+2008-06-06 10:00:00 [02:00:] optimization:   最佳参数配置:
+2008-06-06 10:00:00 [02:00:] optimization:     max_drawdown: 0.08 -> 0.1
+2008-06-06 10:00:00 [02:00:] optimization:     volatility_threshold: 1.3 -> 0.25
+2008-06-06 10:00:00 [02:00:] optimization:     max_leverage_ratio: 1.5 -> 1.2
+2008-06-06 10:00:00 [02:00:] optimization:     target_portfolio_size: 12 -> 10
+2008-06-06 10:00:00 [02:00:] optimization:     rebalance_tolerance: 0.003 -> 0.01
+2008-06-06 10:00:00 [02:00:] portfolio: 投资组合优化参数已更新
+2008-06-06 10:00:00 [02:00:] risk: 风险评估: VIX=medium, 波动率=medium, 回撤=low, 综合=medium
+2008-06-06 10:00:00 [02:00:] risk: 杠杆计算: 风险等级=medium, 目标杠杆=1.06x
+2008-06-06 10:00:00 [02:00:] leverage: 杠杆管理参数已更新
+2008-06-06 10:00:00 [02:00:] portfolio: 投资组合优化参数已更新
+2008-06-06 10:00:00 [02:00:] risk: 风险评估: VIX=medium, 波动率=medium, 回撤=low, 综合=medium
+2008-06-06 10:00:00 [02:00:] risk: 杠杆计算: 风险等级=medium, 目标杠杆=1.06x
+2008-06-06 10:00:00 [02:00:] leverage: 杠杆管理参数已更新
+2008-06-06 10:00:00 [02:00:] portfolio: 投资组合优化参数已更新
+2008-06-06 10:00:00 [02:00:] risk: 风险评估: VIX=medium, 波动率=medium, 回撤=low, 综合=medium
+2008-06-06 10:00:00 [02:00:] risk: 杠杆计算: 风险等级=medium, 目标杠杆=1.06x
+2008-06-06 10:00:00 [02:00:] leverage: 杠杆管理参数已更新
+2008-06-06 10:00:00 [02:00:] portfolio: 投资组合优化参数已更新
+2008-06-06 10:00:00 [02:00:] risk: 风险评估: VIX=medium, 波动率=medium, 回撤=low, 综合=medium
+2008-06-06 10:00:00 [02:00:] risk: 杠杆计算: 风险等级=medium, 目标杠杆=1.06x
+2008-06-06 10:00:00 [02:00:] leverage: 杠杆管理参数已更新
+2008-06-06 10:00:00 [02:00:] portfolio: 投资组合优化参数已更新
+2008-06-06 10:00:00 [02:00:] risk: 风险评估: VIX=medium, 波动率=medium, 回撤=low, 综合=medium
+2008-06-06 10:00:00 [02:00:] risk: 杠杆计算: 风险等级=medium, 目标杠杆=1.06x
+2008-06-06 10:00:00 [02:00:] leverage: 杠杆管理参数已更新
+2008-06-06 10:00:00 [02:00:] optimization: 应用新配置: {'max_drawdown': 0.1, 'volatility_threshold': 0.25, 'max_leverage_ratio': 1.2, 'target_portfolio_size': 10, 'rebalance_tolerance': 0.01}
+2008-06-06 10:00:00 [02:00:] optimization: 找到更好的参数配置，应用新配置
+2008-06-06 10:00:00 [02:00:] optimization: 参数优化完成
+2008-06-06 10:00:00 [02:00:] optimization: ============================================================
+2008-06-06 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-06 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-06 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-06 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-06 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-06 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-06 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-06 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-06 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-06 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-06 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-06 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-06 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-06 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-09 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-09 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-09 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-09 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-09 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-09 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-09 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-09 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-09 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-09 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-09 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-09 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-09 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-09 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-10 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-10 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-10 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-10 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-10 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-10 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-10 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-10 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-10 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-10 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-10 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-10 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-10 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-10 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-11 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-11 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-11 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-11 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-11 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-11 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-11 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-11 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-11 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-11 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-11 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-11 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-11 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-11 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-12 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-12 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-12 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-12 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-12 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-12 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-12 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-12 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-12 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-12 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-12 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-12 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-12 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-12 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-13 10:00:00 [02:00:] optimization: 执行调度的参数优化...
+2008-06-13 10:00:00 [02:00:] optimization: 无法计算夏普比率，返回0
+2008-06-13 10:00:00 [02:00:] optimization: 无法计算夏普比率，返回0
+2008-06-13 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-13 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-13 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-13 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-13 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-13 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-13 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-13 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-13 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-13 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-13 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-13 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-13 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-13 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-16 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-16 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-16 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-16 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-16 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-16 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-16 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-16 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-16 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-16 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-16 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-16 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-16 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-16 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-17 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-17 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-17 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-17 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-17 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-17 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-17 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-17 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-17 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-17 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-17 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-17 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-17 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-17 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-18 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-18 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-18 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-18 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-18 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-18 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-18 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-18 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-18 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-18 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-18 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-18 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-18 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-18 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-19 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-19 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-19 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-19 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-19 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-19 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-19 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-19 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-19 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-19 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-19 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-19 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-19 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-19 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-20 00:00:00 [00:00:] data: Symbol SPY in data but no valid price
+2008-06-20 00:00:00 [00:00:] data: Symbol AVGO not in current data slice
+2008-06-20 00:00:00 [00:00:] data: Symbol AAPL not in current data slice
+2008-06-20 00:00:00 [00:00:] data: Symbol INTC not in current data slice
+2008-06-20 00:00:00 [00:00:] data: Symbol NVDA not in current data slice
+2008-06-20 00:00:00 [00:00:] data: Symbol AMZN not in current data slice
+2008-06-20 00:00:00 [00:00:] data: Symbol LLY not in current data slice
+2008-06-20 00:00:00 [00:00:] data: Symbol MSFT not in current data slice
+2008-06-20 00:00:00 [00:00:] data: Symbol GOOG not in current data slice
+2008-06-20 00:00:00 [00:00:] data: Symbol META not in current data slice
+2008-06-20 00:00:00 [00:00:] data: Symbol TSLA not in current data slice
+2008-06-20 00:00:00 [00:00:] data: Symbol NFLX not in current data slice
+2008-06-20 00:00:00 [00:00:] data: Symbol GLD not in current data slice
+2008-06-20 00:00:00 [00:00:] data: Symbol TQQQ not in current data slice
+2008-06-20 00:00:00 [00:00:] data: Symbol SQQQ not in current data slice
+2008-06-20 00:00:00 [00:00:] data: Symbol TLT not in current data slice
+2008-06-20 00:00:00 [00:00:] data: Symbol IEF not in current data slice
+2008-06-20 00:00:00 [00:00:] data: Symbol BIL not in current data slice
+2008-06-20 00:00:00 [00:00:] data: Data slice contains 0/18 expected symbols: []
+2008-06-20 00:00:00 [00:00:] data: Total symbols in data slice: 1
+2008-06-20 10:00:00 [02:00:] optimization: 执行调度的参数优化...
+2008-06-20 10:00:00 [02:00:] optimization: 无法计算夏普比率，返回0
+2008-06-20 10:00:00 [02:00:] optimization: 无法计算夏普比率，返回0
+2008-06-20 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-20 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-20 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-20 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-20 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-20 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-20 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-20 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-20 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-20 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-20 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-20 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-20 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-20 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-23 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-23 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-23 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-23 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-23 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-23 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-23 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-23 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-23 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-23 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-23 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-23 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-23 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-23 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-24 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-24 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-24 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-24 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-24 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-24 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-24 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-24 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-24 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-24 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-24 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-24 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-24 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-24 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-25 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-25 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-25 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-25 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-25 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-25 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-25 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-25 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-25 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-25 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-25 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-25 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-25 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-25 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-26 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-26 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-26 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-26 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-26 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-26 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-26 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-26 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-26 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-26 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-26 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-26 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-26 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-26 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-27 10:00:00 [02:00:] optimization: 执行调度的参数优化...
+2008-06-27 10:00:00 [02:00:] optimization: 无法计算夏普比率，返回0
+2008-06-27 10:00:00 [02:00:] optimization: 无法计算夏普比率，返回0
+2008-06-27 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-27 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-27 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-27 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-27 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-27 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-27 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-27 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-27 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-27 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-27 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-27 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-27 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-27 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-06-30 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-06-30 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-06-30 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-06-30 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-06-30 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-06-30 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-06-30 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-06-30 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-06-30 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-06-30 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-06-30 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-06-30 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-06-30 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-06-30 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-07-01 00:00:00 [17:00:] optimization: 执行调度的参数优化...
+2008-07-01 00:00:00 [17:00:] optimization: 使用投资组合价值历史计算夏普比率: 20个数据点
+2008-07-01 00:00:00 [17:00:] optimization: 日收益率统计: 平均=0.000000, 标准差=0.000000
+2008-07-01 00:00:00 [17:00:] optimization: 收益率标准差为0，无法计算夏普比率
+2008-07-01 00:00:00 [17:00:] optimization: 无法计算夏普比率，返回0
+2008-07-01 00:00:00 [17:00:] optimization: 使用投资组合价值历史计算夏普比率: 20个数据点
+2008-07-01 00:00:00 [17:00:] optimization: 日收益率统计: 平均=0.000000, 标准差=0.000000
+2008-07-01 00:00:00 [17:00:] optimization: 收益率标准差为0，无法计算夏普比率
+2008-07-01 00:00:00 [17:00:] optimization: 无法计算夏普比率，返回0
+2008-07-01 00:00:00 [00:00:] data: Symbol SPY not in current data slice
+2008-07-01 00:00:00 [00:00:] data: Symbol AVGO not in current data slice
+2008-07-01 00:00:00 [00:00:] data: Symbol AAPL not in current data slice
+2008-07-01 00:00:00 [00:00:] data: Symbol INTC not in current data slice
+2008-07-01 00:00:00 [00:00:] data: Symbol NVDA not in current data slice
+2008-07-01 00:00:00 [00:00:] data: Symbol AMZN not in current data slice
+2008-07-01 00:00:00 [00:00:] data: Symbol LLY not in current data slice
+2008-07-01 00:00:00 [00:00:] data: Symbol MSFT not in current data slice
+2008-07-01 00:00:00 [00:00:] data: Symbol GOOG not in current data slice
+2008-07-01 00:00:00 [00:00:] data: Symbol META not in current data slice
+2008-07-01 00:00:00 [00:00:] data: Symbol TSLA not in current data slice
+2008-07-01 00:00:00 [00:00:] data: Symbol NFLX not in current data slice
+2008-07-01 00:00:00 [00:00:] data: Symbol GLD not in current data slice
+2008-07-01 00:00:00 [00:00:] data: Symbol TQQQ not in current data slice
+2008-07-01 00:00:00 [00:00:] data: Symbol SQQQ not in current data slice
+2008-07-01 00:00:00 [00:00:] data: Symbol TLT in data but no valid price
+2008-07-01 00:00:00 [00:00:] data: Symbol IEF in data but no valid price
+2008-07-01 00:00:00 [00:00:] data: Symbol BIL in data but no valid price
+2008-07-01 00:00:00 [00:00:] data: Data slice contains 0/18 expected symbols: []
+2008-07-01 00:00:00 [00:00:] data: Total symbols in data slice: 3
+2008-07-01 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-07-01 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-07-01 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-07-01 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-07-01 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-07-01 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-07-01 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-07-01 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-07-01 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-07-01 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-07-01 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-07-01 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-07-01 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-07-01 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-07-02 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-07-02 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-07-02 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-07-02 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-07-02 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-07-02 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-07-02 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-07-02 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-07-02 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-07-02 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-07-02 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-07-02 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-07-02 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-07-02 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-07-03 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-07-03 13:00:00 [13:00:] data: Symbol AVGO not in current data slice
+2008-07-03 13:00:00 [13:00:] data: Symbol GOOG not in current data slice
+2008-07-03 13:00:00 [13:00:] data: Symbol META not in current data slice
+2008-07-03 13:00:00 [13:00:] data: Symbol TSLA not in current data slice
+2008-07-03 13:00:00 [13:00:] data: Symbol TQQQ not in current data slice
+2008-07-03 13:00:00 [13:00:] data: Symbol SQQQ not in current data slice
+2008-07-03 13:00:00 [13:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-07-03 13:00:00 [13:00:] data: Total symbols in data slice: 12
+2008-07-03 13:15:00 [13:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-07-03 13:15:00 [13:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-07-03 13:15:00 [13:15:] data: Symbol SPY not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Symbol AVGO not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Symbol AAPL not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Symbol INTC not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Symbol NVDA not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Symbol AMZN not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Symbol LLY not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Symbol MSFT not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Symbol GOOG not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Symbol META not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Symbol TSLA not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Symbol NFLX not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Symbol GLD not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Symbol TQQQ not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Symbol SQQQ not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Symbol TLT not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Symbol IEF not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Symbol BIL not in current data slice
+2008-07-03 13:15:00 [13:15:] data: Data slice contains 0/18 expected symbols: []
+2008-07-03 13:15:00 [13:15:] data: Total symbols in data slice: 1
+2008-07-07 10:00:00 [02:00:] optimization: 执行调度的参数优化...
+2008-07-07 10:00:00 [02:00:] optimization: 使用投资组合价值历史计算夏普比率: 23个数据点
+2008-07-07 10:00:00 [02:00:] optimization: 日收益率统计: 平均=0.000000, 标准差=0.000000
+2008-07-07 10:00:00 [02:00:] optimization: 收益率标准差为0，无法计算夏普比率
+2008-07-07 10:00:00 [02:00:] optimization: 无法计算夏普比率，返回0
+2008-07-07 10:00:00 [02:00:] optimization: 使用投资组合价值历史计算夏普比率: 23个数据点
+2008-07-07 10:00:00 [02:00:] optimization: 日收益率统计: 平均=0.000000, 标准差=0.000000
+2008-07-07 10:00:00 [02:00:] optimization: 收益率标准差为0，无法计算夏普比率
+2008-07-07 10:00:00 [02:00:] optimization: 无法计算夏普比率，返回0
+2008-07-07 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-07-07 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-07-07 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-07-07 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-07-07 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-07-07 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-07-07 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-07-07 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-07-07 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-07-07 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-07-07 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-07-07 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-07-07 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-07-07 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-07-08 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-07-08 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-07-08 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-07-08 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-07-08 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-07-08 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-07-08 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-07-08 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-07-08 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-07-08 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-07-08 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-07-08 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-07-08 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-07-08 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-07-09 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-07-09 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-07-09 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-07-09 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-07-09 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-07-09 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-07-09 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-07-09 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-07-09 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-07-09 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-07-09 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-07-09 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-07-09 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-07-09 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-07-10 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-07-10 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-07-10 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-07-10 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-07-10 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-07-10 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-07-10 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-07-10 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-07-10 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-07-10 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-07-10 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-07-10 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-07-10 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-07-10 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-07-11 10:00:00 [02:00:] optimization: 执行调度的参数优化...
+2008-07-11 10:00:00 [02:00:] optimization: 使用投资组合价值历史计算夏普比率: 27个数据点
+2008-07-11 10:00:00 [02:00:] optimization: 日收益率统计: 平均=0.000000, 标准差=0.000000
+2008-07-11 10:00:00 [02:00:] optimization: 收益率标准差为0，无法计算夏普比率
+2008-07-11 10:00:00 [02:00:] optimization: 无法计算夏普比率，返回0
+2008-07-11 10:00:00 [02:00:] optimization: 使用投资组合价值历史计算夏普比率: 27个数据点
+2008-07-11 10:00:00 [02:00:] optimization: 日收益率统计: 平均=0.000000, 标准差=0.000000
+2008-07-11 10:00:00 [02:00:] optimization: 收益率标准差为0，无法计算夏普比率
+2008-07-11 10:00:00 [02:00:] optimization: 无法计算夏普比率，返回0
+2008-07-11 10:00:00 [02:00:] optimization: ============================================================
+2008-07-11 10:00:00 [02:00:] optimization: 开始运行参数优化...
+2008-07-11 10:00:00 [02:00:] optimization: 使用投资组合价值历史计算夏普比率: 27个数据点
+2008-07-11 10:00:00 [02:00:] optimization: 日收益率统计: 平均=0.000000, 标准差=0.000000
+2008-07-11 10:00:00 [02:00:] optimization: 收益率标准差为0，无法计算夏普比率
+2008-07-11 10:00:00 [02:00:] optimization: 无法计算夏普比率，返回0
+2008-07-11 10:00:00 [02:00:] optimization: 当前性能状态:
+2008-07-11 10:00:00 [02:00:] optimization:   组合价值: $100,000.00
+2008-07-11 10:00:00 [02:00:] optimization:   总收益率: 0.00%
+2008-07-11 10:00:00 [02:00:] optimization:   现金比例: 1.00%
+2008-07-11 10:00:00 [02:00:] optimization:   杠杆比例: 0.00
+2008-07-11 10:00:00 [02:00:] optimization:   持仓数量: 0
+2008-07-11 10:00:00 [02:00:] optimization:   最大回撤: 0.00%
+2008-07-11 10:00:00 [02:00:] optimization:   夏普比率: 0.000
+2008-07-11 10:00:00 [02:00:] optimization: 使用投资组合价值历史计算夏普比率: 27个数据点
+2008-07-11 10:00:00 [02:00:] optimization: 日收益率统计: 平均=0.000000, 标准差=0.000000
+2008-07-11 10:00:00 [02:00:] optimization: 收益率标准差为0，无法计算夏普比率
+2008-07-11 10:00:00 [02:00:] optimization: 无法计算夏普比率，返回0
+2008-07-11 10:00:00 [02:00:] optimization: 优化参数设置:
+2008-07-11 10:00:00 [02:00:] optimization:   VIX水平: 20.00
+2008-07-11 10:00:00 [02:00:] optimization:   市场波动率: 0.15%
+2008-07-11 10:00:00 [02:00:] optimization:   参数空间:
+2008-07-11 10:00:00 [02:00:] optimization:     max_drawdown: [0.06, 0.08, 0.1, 0.12]
+2008-07-11 10:00:00 [02:00:] optimization:     volatility_threshold: [0.18, 0.22, 0.25, 0.28]
+2008-07-11 10:00:00 [02:00:] optimization:     max_leverage_ratio: [1.0, 1.2, 1.5]
+2008-07-11 10:00:00 [02:00:] optimization:     target_portfolio_size: [8, 10, 12, 15]
+2008-07-11 10:00:00 [02:00:] optimization:     rebalance_tolerance: [0.003, 0.005, 0.01]
+2008-07-11 10:00:00 [02:00:] optimization: 开始random_search优化...
+2008-07-11 10:00:00 [02:00:] optimization: random_search优化完成:
+2008-07-11 10:00:00 [02:00:] optimization:   最佳参数: {'max_drawdown': 0.06, 'volatility_threshold': 0.18, 'max_leverage_ratio': 1.0, 'target_portfolio_size': 10, 'rebalance_tolerance': 0.003}
+2008-07-11 10:00:00 [02:00:] optimization:   最佳分数: 1.5525
+2008-07-11 10:00:00 [02:00:] optimization:   测试了20个参数组合
+2008-07-11 10:00:00 [02:00:] optimization:   前3名表现:
+2008-07-11 10:00:00 [02:00:] optimization:     #1: 夏普=1.5525, 收益=61.60%, 回撤=30.61%
+2008-07-11 10:00:00 [02:00:] optimization:          参数: {'max_drawdown': 0.06, 'volatility_threshold': 0.18, 'max_leverage_ratio': 1.0, 'target_portfolio_size': 10, 'rebalance_tolerance': 0.003}
+2008-07-11 10:00:00 [02:00:] optimization:     #2: 夏普=1.2785, 收益=55.38%, 回撤=17.73%
+2008-07-11 10:00:00 [02:00:] optimization:          参数: {'max_drawdown': 0.12, 'volatility_threshold': 0.22, 'max_leverage_ratio': 1.5, 'target_portfolio_size': 15, 'rebalance_tolerance': 0.003}
+2008-07-11 10:00:00 [02:00:] optimization:     #3: 夏普=1.1733, 收益=54.73%, 回撤=23.34%
+2008-07-11 10:00:00 [02:00:] optimization:          参数: {'max_drawdown': 0.1, 'volatility_threshold': 0.25, 'max_leverage_ratio': 1.5, 'target_portfolio_size': 10, 'rebalance_tolerance': 0.005}
+2008-07-11 10:00:00 [02:00:] optimization: 优化结果分析:
+2008-07-11 10:00:00 [02:00:] optimization:   当前基准夏普比率: 0.9140
+2008-07-11 10:00:00 [02:00:] optimization:   优化最佳夏普比率: 1.5525
+2008-07-11 10:00:00 [02:00:] optimization:   改进幅度: 0.6385
+2008-07-11 10:00:00 [02:00:] optimization: 发现性能改进！应用新配置
+2008-07-11 10:00:00 [02:00:] optimization:   绝对改进: 0.6385
+2008-07-11 10:00:00 [02:00:] optimization:   相对改进: 69.86%
+2008-07-11 10:00:00 [02:00:] optimization: 优化结果:
+2008-07-11 10:00:00 [02:00:] optimization:   测试配置数量: 1
+2008-07-11 10:00:00 [02:00:] optimization:   最高评分: 1.5525
+2008-07-11 10:00:00 [02:00:] optimization:   最低评分: 1.5525
+2008-07-11 10:00:00 [02:00:] optimization:   平均评分: 1.5525
+2008-07-11 10:00:00 [02:00:] optimization:   最佳参数配置:
+2008-07-11 10:00:00 [02:00:] optimization:     max_drawdown: 0.1 -> 0.06
+2008-07-11 10:00:00 [02:00:] optimization:     volatility_threshold: 0.25 -> 0.18
+2008-07-11 10:00:00 [02:00:] optimization:     max_leverage_ratio: 1.2 -> 1.0
+2008-07-11 10:00:00 [02:00:] optimization:     target_portfolio_size: 10
+2008-07-11 10:00:00 [02:00:] optimization:     rebalance_tolerance: 0.01 -> 0.003
+2008-07-11 10:00:00 [02:00:] portfolio: 投资组合优化参数已更新
+2008-07-11 10:00:00 [02:00:] risk: 风险评估: VIX=medium, 波动率=medium, 回撤=low, 综合=medium
+2008-07-11 10:00:00 [02:00:] risk: 杠杆计算: 风险等级=medium, 目标杠杆=1.06x
+2008-07-11 10:00:00 [02:00:] leverage: 杠杆管理参数已更新
+2008-07-11 10:00:00 [02:00:] portfolio: 投资组合优化参数已更新
+2008-07-11 10:00:00 [02:00:] risk: 风险评估: VIX=medium, 波动率=medium, 回撤=low, 综合=medium
+2008-07-11 10:00:00 [02:00:] risk: 杠杆计算: 风险等级=medium, 目标杠杆=1.06x
+2008-07-11 10:00:00 [02:00:] leverage: 杠杆管理参数已更新
+2008-07-11 10:00:00 [02:00:] portfolio: 投资组合优化参数已更新
+2008-07-11 10:00:00 [02:00:] risk: 风险评估: VIX=medium, 波动率=medium, 回撤=low, 综合=medium
+2008-07-11 10:00:00 [02:00:] risk: 杠杆计算: 风险等级=medium, 目标杠杆=1.00x
+2008-07-11 10:00:00 [02:00:] leverage: 杠杆管理参数已更新
+2008-07-11 10:00:00 [02:00:] portfolio: 投资组合优化参数已更新
+2008-07-11 10:00:00 [02:00:] risk: 风险评估: VIX=medium, 波动率=medium, 回撤=low, 综合=medium
+2008-07-11 10:00:00 [02:00:] risk: 杠杆计算: 风险等级=medium, 目标杠杆=1.00x
+2008-07-11 10:00:00 [02:00:] leverage: 杠杆管理参数已更新
+2008-07-11 10:00:00 [02:00:] portfolio: 投资组合优化参数已更新
+2008-07-11 10:00:00 [02:00:] risk: 风险评估: VIX=medium, 波动率=medium, 回撤=low, 综合=medium
+2008-07-11 10:00:00 [02:00:] risk: 杠杆计算: 风险等级=medium, 目标杠杆=1.00x
+2008-07-11 10:00:00 [02:00:] leverage: 杠杆管理参数已更新
+2008-07-11 10:00:00 [02:00:] optimization: 应用新配置: {'max_drawdown': 0.06, 'volatility_threshold': 0.18, 'max_leverage_ratio': 1.0, 'target_portfolio_size': 10, 'rebalance_tolerance': 0.003}
+2008-07-11 10:00:00 [02:00:] optimization: 找到更好的参数配置，应用新配置
+2008-07-11 10:00:00 [02:00:] optimization: 参数优化完成
+2008-07-11 10:00:00 [02:00:] optimization: ============================================================
+2008-07-11 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-07-11 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-07-11 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-07-11 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-07-11 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-07-11 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-07-11 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-07-11 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-07-11 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-07-11 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-07-11 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-07-11 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-07-11 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-07-11 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-07-14 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-07-14 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-07-14 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-07-14 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-07-14 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-07-14 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-07-14 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-07-14 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-07-14 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-07-14 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-07-14 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-07-14 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-07-14 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-07-14 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-07-15 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-07-15 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-07-15 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-07-15 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-07-15 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-07-15 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-07-15 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-07-15 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-07-15 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-07-15 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-07-15 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-07-15 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-07-15 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-07-15 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-07-16 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-07-16 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-07-16 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-07-16 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-07-16 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-07-16 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-07-16 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-07-16 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-07-16 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-07-16 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-07-16 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-07-16 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-07-16 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-07-16 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-07-17 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-07-17 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-07-17 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-07-17 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-07-17 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-07-17 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-07-17 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-07-17 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-07-17 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-07-17 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-07-17 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-07-17 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-07-17 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-07-17 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-07-18 10:00:00 [02:00:] optimization: 执行调度的参数优化...
+2008-07-18 10:00:00 [02:00:] optimization: 使用投资组合价值历史计算夏普比率: 32个数据点
+2008-07-18 10:00:00 [02:00:] optimization: 日收益率统计: 平均=0.000000, 标准差=0.000000
+2008-07-18 10:00:00 [02:00:] optimization: 收益率标准差为0，无法计算夏普比率
+2008-07-18 10:00:00 [02:00:] optimization: 无法计算夏普比率，返回0
+2008-07-18 10:00:00 [02:00:] optimization: 使用投资组合价值历史计算夏普比率: 32个数据点
+2008-07-18 10:00:00 [02:00:] optimization: 日收益率统计: 平均=0.000000, 标准差=0.000000
+2008-07-18 10:00:00 [02:00:] optimization: 收益率标准差为0，无法计算夏普比率
+2008-07-18 10:00:00 [02:00:] optimization: 无法计算夏普比率，返回0
+2008-07-18 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-07-18 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-07-18 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-07-18 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-07-18 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-07-18 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-07-18 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-07-18 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-07-18 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-07-18 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-07-18 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-07-18 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-07-18 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-07-18 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-07-21 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-07-21 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-07-21 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-07-21 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-07-21 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-07-21 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-07-21 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-07-21 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-07-21 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-07-21 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-07-21 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-07-21 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-07-21 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-07-21 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-07-22 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-07-22 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-07-22 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-07-22 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-07-22 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-07-22 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-07-22 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-07-22 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-07-22 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-07-22 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-07-22 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-07-22 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+2008-07-22 16:15:00 [16:15:] data: Data slice contains 0/18 expected symbols: []
+2008-07-22 16:15:00 [16:15:] data: Total symbols in data slice: 1
+2008-07-23 10:00:00 [09:30:] algorithm: Skipping rebalance during warmup period
+2008-07-23 16:00:00 [16:00:] data: Symbol AVGO not in current data slice
+2008-07-23 16:00:00 [16:00:] data: Symbol GOOG not in current data slice
+2008-07-23 16:00:00 [16:00:] data: Symbol META not in current data slice
+2008-07-23 16:00:00 [16:00:] data: Symbol TSLA not in current data slice
+2008-07-23 16:00:00 [16:00:] data: Symbol TQQQ not in current data slice
+2008-07-23 16:00:00 [16:00:] data: Symbol SQQQ not in current data slice
+2008-07-23 16:00:00 [16:00:] data: Data slice contains 12/18 expected symbols: ['SPY', 'AAPL', 'INTC', 'NVDA', 'AMZN', 'LLY', 'MSFT', 'NFLX', 'GLD', 'TLT', 'IEF', 'BIL']
+2008-07-23 16:00:00 [16:00:] data: Total symbols in data slice: 12
+2008-07-23 16:15:00 [16:01:] portfolio: [每日报告] 组合总值: $100,000.00, 现金: $100,000.00, 股票: $0.00 (0.0%)
+2008-07-23 16:15:00 [16:01:] portfolio: [每日报告] 无持仓股票，跳过成交量分析
+2008-07-23 16:15:00 [16:15:] data: Symbol SPY not in current data slice
+2008-07-23 16:15:00 [16:15:] data: Symbol AVGO not in current data slice
+2008-07-23 16:15:00 [16:15:] data: Symbol AAPL not in current data slice
+2008-07-23 16:15:00 [16:15:] data: Symbol INTC not in current data slice
+2008-07-23 16:15:00 [16:15:] data: Symbol NVDA not in current data slice
+2008-07-23 16:15:00 [16:15:] data: Symbol AMZN not in current data slice
+2008-07-23 16:15:00 [16:15:] data: Symbol LLY not in current data slice
+2008-07-23 16:15:00 [16:15:] data: Symbol MSFT not in current data slice
+2008-07-23 16:15:00 [16:15:] data: Symbol GOOG not in current data slice
+2008-07-23 16:15:00 [16:15:] data: Symbol META not in current data slice
+2008-07-23 16:15:00 [16:15:] data: Symbol TSLA not in current data slice
+2008-07-23 16:15:00 [16:15:] data: Symbol NFLX not in current data slice
+2008-07-23 16:15:00 [16:15:] data: Symbol GLD not in current data slice
+2008-07-23 16:15:00 [16:15:] data: Symbol TQQQ not in current data slice
+2008-07-23 16:15:00 [16:15:] data: Symbol SQQQ not in current data slice
+2008-07-23 16:15:00 [16:15:] data: Symbol TLT not in current data slice
+2008-07-23 16:15:00 [16:15:] data: Symbol IEF not in current data slice
+2008-07-23 16:15:00 [16:15:] data: Symbol BIL not in current data slice
+You currently have a maximum of 100kb of log data per backtest, and 100kb total max per day. Have you tried step-by-step debugging? See more at https://qnt.co/debugging or upgrade your organization type for more logs at https://www.quantconnect.com/pricing
