@@ -469,7 +469,7 @@ class PortfolioOptimizer:
         if total_weight > 0:
             constrained_weights = constrained_weights / total_weight
             
-            # 5. 动态计算目标股票仓位比例
+            # 5. 动态计算目标股票仓位比例 - Alert Black Bat分析
             target_equity_ratio = self._calculate_dynamic_equity_ratio(weights, symbols)
             
             # 6. 应用股票仓位比例 - 修复：确保权重正确记录和应用
@@ -491,8 +491,53 @@ class PortfolioOptimizer:
         return constrained_weights
 
     def _calculate_dynamic_equity_ratio(self, weights, symbols):
-        """动态股票仓位计算 - 支持杠杆到130%"""
+        """动态股票仓位计算 - Alert Black Bat分析优化，支持杠杆到130%"""
         try:
+            # *** Alert Black Bat代码执行验证 ***
+            self.algorithm.log_debug("Alert Black Bat代码已执行", log_type="risk")
+            
+            # 获取基础配置
+            portfolio_config = self.config.PORTFOLIO_CONFIG
+            leverage_config = self.config.LEVERAGE_CONFIG
+            risk_config = self.config.RISK_CONFIG
+            
+            # === Alert Black Bat分析：动态现金管理优先级最高 ===
+            dynamic_cash_config = risk_config.get('dynamic_cash_management', {})
+            enable_dynamic_cash = dynamic_cash_config.get('enable_dynamic_cash', False)
+            
+            # 关键日志：只在启用时输出
+            if enable_dynamic_cash:
+                self.algorithm.log_debug("Alert Black Bat动态现金管理已启用", log_type="risk")
+            
+            if enable_dynamic_cash:
+                market_condition = self._assess_market_condition()
+                cash_range = self._get_cash_range_by_market_condition(market_condition, dynamic_cash_config)
+                
+                # 根据市场状况调整现金比例
+                if market_condition == 'crisis':
+                    # 危机市场：大幅增加现金比例
+                    cash_ratio = cash_range[1]  # 使用范围上限
+                    equity_ratio = 1.0 - cash_ratio
+                    self.algorithm.log_debug(f"Alert Black Bat危机: 现金{cash_ratio:.0%}, 股票{equity_ratio:.0%}", 
+                                           log_type="risk")
+                elif market_condition == 'volatile':
+                    # 波动市场：适度增加现金比例
+                    cash_ratio = (cash_range[0] + cash_range[1]) / 2
+                    equity_ratio = 1.0 - cash_ratio
+                    self.algorithm.log_debug(f"Alert Black Bat波动: 现金{cash_ratio:.0%}, 股票{equity_ratio:.0%}", 
+                                           log_type="risk")
+                else:
+                    # 正常市场：允许轻微杠杆
+                    cash_ratio = cash_range[0]  # 使用范围下限（可能为负）
+                    equity_ratio = 1.0 - cash_ratio
+                    self.algorithm.log_debug(f"Alert Black Bat正常: 现金{cash_ratio:.0%}, 股票{equity_ratio:.0%}", 
+                                           log_type="risk")
+                
+                # 缓存最终的股票仓位比例
+                self._last_equity_ratio = equity_ratio
+                return equity_ratio
+            
+            # === 传统模式（如果未启用Alert Black Bat动态现金管理） ===
             # 集成杠杆管理器获取目标杠杆比例
             target_leverage = 1.0  # 默认值
             if hasattr(self.algorithm, 'leverage_manager'):
@@ -500,7 +545,6 @@ class PortfolioOptimizer:
                 self.algorithm.log_debug(f"获取目标杠杆比例: {target_leverage:.2f}", log_type="leverage")
             
             # 基于杠杆调整仓位范围
-            leverage_config = self.config.LEVERAGE_CONFIG
             if leverage_config.get('enable_leverage', False):
                 # 杠杆模式下的仓位设置
                 base_equity_ratio = min(target_leverage, leverage_config.get('max_leverage_ratio', 1.3))
@@ -718,6 +762,131 @@ class PortfolioOptimizer:
         except Exception as e:
             self.algorithm.log_debug(f"仓位一致性验证错误: {e}", log_type="optimizer")
             return False
+    
+    def _assess_market_risk(self):
+        """评估市场风险等级"""
+        try:
+            # 检查防御模式
+            defense_mode = None
+            if hasattr(self.algorithm, 'system_monitor'):
+                defense_mode = self.algorithm.system_monitor.get_defense_mode()
+            
+            # 检查回撤水平
+            current_drawdown = 0.0
+            if hasattr(self.algorithm, 'drawdown_monitor'):
+                current_drawdown = abs(self.algorithm.drawdown_monitor.get_current_drawdown())
+            
+            # 检查VIX风险状态
+            vix_risk_state = 'normal'
+            if hasattr(self.algorithm, 'vix_monitor'):
+                vix_risk_state = self.algorithm.vix_monitor.get_risk_state()
+            
+            # 整合杠杆管理器的风险评估
+            leverage_risk_level = 'medium'
+            if hasattr(self.algorithm, 'leverage_manager'):
+                leverage_risk_level = getattr(self.algorithm.leverage_manager, '_risk_level', 'medium')
+            
+            # 综合风险等级评估
+            risk_factors = []
+            
+            # 防御模式风险
+            if defense_mode == 'extreme_defense':
+                risk_factors.append('very_high')
+            elif defense_mode == 'aggressive_defense':
+                risk_factors.append('high')
+            elif defense_mode == 'moderate_defense':
+                risk_factors.append('medium')
+            
+            # 回撤风险 - Alert Black Bat分析优化
+            if current_drawdown > 0.12:
+                risk_factors.append('very_high')
+            elif current_drawdown > 0.08:
+                risk_factors.append('high')
+            elif current_drawdown > 0.05:
+                risk_factors.append('medium')
+            else:
+                risk_factors.append('low')
+            
+            # VIX风险
+            if vix_risk_state == 'extreme':
+                risk_factors.append('very_high')
+            elif vix_risk_state == 'high':
+                risk_factors.append('high')
+            elif vix_risk_state == 'medium':
+                risk_factors.append('medium')
+            else:
+                risk_factors.append('low')
+            
+            # 杠杆管理器风险
+            if leverage_risk_level == 'extreme':
+                risk_factors.append('very_high')
+            elif leverage_risk_level == 'high':
+                risk_factors.append('high')
+            elif leverage_risk_level == 'medium':
+                risk_factors.append('medium')
+            else:
+                risk_factors.append('low')
+            
+            # 取最高风险等级
+            risk_hierarchy = ['very_low', 'low', 'medium', 'high', 'very_high']
+            if not risk_factors:
+                risk_factors = ['medium']
+            
+            final_risk = max(risk_factors, key=lambda x: risk_hierarchy.index(x) if x in risk_hierarchy else 2)
+            
+            self.algorithm.log_debug(f"市场风险评估: {final_risk} (防御:{defense_mode}, 回撤:{current_drawdown:.2%}, "
+                                   f"VIX:{vix_risk_state}, 杠杆:{leverage_risk_level})", log_type="risk")
+            
+            return final_risk
+            
+        except Exception as e:
+            self.algorithm.log_debug(f"市场风险评估错误: {e}", log_type="risk")
+            return 'medium'
+    
+    def _assess_market_condition(self):
+        """Alert Black Bat分析：评估市场状况"""
+        try:
+            # 获取当前回撤
+            current_drawdown = 0.0
+            if hasattr(self.algorithm, 'drawdown_monitor'):
+                current_drawdown = abs(self.algorithm.drawdown_monitor.get_current_drawdown())
+            
+            # 获取VIX水平
+            vix_level = 20
+            if hasattr(self.algorithm, 'vix_monitor'):
+                vix_level = getattr(self.algorithm.vix_monitor, '_current_vix', 20)
+            
+            # 根据Alert Black Bat分析结论判断市场状况
+            if current_drawdown >= 0.10 or vix_level >= 30:
+                condition = 'crisis'      # 危机市场：回撤≥10%或VIX≥30
+            elif current_drawdown >= 0.05 or vix_level >= 22:
+                condition = 'volatile'    # 波动市场：回撤≥5%或VIX≥22
+            else:
+                condition = 'normal'      # 正常市场
+            
+            # 只在非正常状态时输出日志
+            if condition != 'normal':
+                self.algorithm.log_debug(f"Alert Black Bat: {condition} (回撤{current_drawdown:.1%}, VIX{vix_level:.1f})", log_type="risk")
+            
+            return condition
+                
+        except Exception as e:
+            self.algorithm.log_debug(f"Alert Black Bat评估错误: {e}", log_type="risk")
+            return 'normal'
+    
+    def _get_cash_range_by_market_condition(self, market_condition, dynamic_cash_config):
+        """Alert Black Bat分析：根据市场状况获取现金比例范围"""
+        try:
+            if market_condition == 'crisis':
+                return dynamic_cash_config.get('crisis_market_cash_range', (0.20, 0.40))
+            elif market_condition == 'volatile':
+                return dynamic_cash_config.get('volatile_market_cash_range', (0.10, 0.20))
+            else:
+                return dynamic_cash_config.get('normal_market_cash_range', (-0.02, 0.05))
+                
+        except Exception as e:
+            self.algorithm.log_debug(f"现金范围获取错误: {e}", log_type="risk")
+            return (0.0, 0.05)  # 默认范围
 
 
  

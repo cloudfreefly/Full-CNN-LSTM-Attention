@@ -301,6 +301,9 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
         """执行模型训练"""
         training_start_time = time.time()
         
+        # 设置训练状态标志
+        self._is_training = True
+        
         try:
             self.log_debug("Starting optimized training process", log_type="algorithm")
             
@@ -366,9 +369,15 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
         except Exception as e:
             self.log_debug("CRITICAL ERROR in training: " + str(e), log_type="algorithm")
             return False
+        finally:
+            # 清除训练状态标志
+            self._is_training = False
     
     def _perform_rebalancing(self):
         """执行投资组合调仓"""
+        # 设置调仓状态标志
+        self._is_rebalancing = True
+        
         try:
             self.log_debug("Starting rebalancing execution", log_type="algorithm")
             
@@ -392,6 +401,9 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
         except Exception as e:
             self.log_debug("CRITICAL ERROR in rebalancing execution: " + str(e), log_type="algorithm")
             raise  # 重新抛出异常以便上层处理
+        finally:
+            # 清除调仓状态标志
+            self._is_rebalancing = False
     
     def _rebalance_with_models(self):
         """使用训练好的模型进行调仓"""
@@ -911,16 +923,17 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
         pass
 
     def log_debug(self, message, log_type="general"):
-        """增强的调试日志方法 - 添加消息限流"""
+        """增强的调试日志方法 - 添加消息限流和延时控制"""
         try:
             # 临时调试：先尝试直接输出，如果失败再使用复杂逻辑
             if hasattr(self, '_simple_log_mode') and self._simple_log_mode:
                 prefix = f"[{self.time.strftime('%H:%M:')}] {log_type}: " if log_type != "general" else f"[{self.time.strftime('%H:%M:')}] "
-                self.log(f"{prefix}{message}")
+                self.Debug(f"{prefix}{message}")
                 return
             
             # 获取消息控制配置
             message_config = self.config.MESSAGE_CONTROL_CONFIG
+            logging_config = self.config.LOGGING_CONFIG
             
             # 检查是否启用限流
             if message_config.get('enable_rate_limiting', False):
@@ -937,7 +950,7 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
                     self._last_minute = current_time.minute
                 
                 # 检查消息频率
-                max_per_minute = message_config.get('max_messages_per_minute', 100)
+                max_per_minute = message_config.get('max_messages_per_minute', 10)
                 current_count = self._message_counter.get(log_type, 0)
                 
                 if current_count >= max_per_minute:
@@ -977,11 +990,77 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
             # 输出消息
             if self.config.DEBUG_LEVEL.get(log_type, True):
                 prefix = f"[{self.time.strftime('%H:%M:')}] {log_type}: " if log_type != "general" else f"[{self.time.strftime('%H:%M:')}] "
-                self.log(f"{prefix}{message}")
+                self.Debug(f"{prefix}{message}")
+                
+                # === 实现日志延迟功能 ===
+                if logging_config.get('enable_log_delay', False):
+                    try:
+                        # 获取延迟时间（毫秒）
+                        base_delay_ms = logging_config.get('log_delay_ms', 20)
+                        
+                        # 获取分类别延迟配置
+                        category_delays = logging_config.get('category_delays', {})
+                        type_delay_ms = category_delays.get(log_type, base_delay_ms)
+                        
+                        # 动态延迟调整
+                        dynamic_config = logging_config.get('dynamic_delay', {})
+                        if dynamic_config.get('enable_dynamic_delay', False):
+                            # 检测高频日志
+                            if not hasattr(self, '_log_frequency_tracker'):
+                                self._log_frequency_tracker = {}
+                                self._log_frequency_window_start = time.time()
+                            
+                            current_real_time = time.time()
+                            window_duration = 1.0  # 1秒窗口
+                            
+                            # 重置频率窗口
+                            if current_real_time - self._log_frequency_window_start > window_duration:
+                                self._log_frequency_tracker.clear()
+                                self._log_frequency_window_start = current_real_time
+                            
+                            # 更新频率计数
+                            self._log_frequency_tracker[log_type] = self._log_frequency_tracker.get(log_type, 0) + 1
+                            
+                            # 调整延迟时间
+                            current_frequency = self._log_frequency_tracker[log_type]
+                            high_frequency_threshold = dynamic_config.get('high_frequency_threshold', 10)
+                            
+                            if current_frequency > high_frequency_threshold:
+                                delay_increment = dynamic_config.get('delay_increment_ms', 5)
+                                max_delay = dynamic_config.get('max_delay_ms', 100)
+                                type_delay_ms = min(type_delay_ms + delay_increment, max_delay)
+                        
+                        # 特殊情况延迟
+                        special_delays = logging_config.get('special_delays', {})
+                        
+                        # 训练期间延迟
+                        if hasattr(self, '_is_training') and self._is_training:
+                            type_delay_ms = special_delays.get('training_period_delay', type_delay_ms)
+                        
+                        # 预热期延迟
+                        if hasattr(self, 'IsWarmingUp') and self.IsWarmingUp:
+                            type_delay_ms = special_delays.get('warmup_period_delay', type_delay_ms)
+                        
+                        # 调仓期延迟
+                        if hasattr(self, '_is_rebalancing') and self._is_rebalancing:
+                            type_delay_ms = special_delays.get('rebalance_period_delay', type_delay_ms)
+                        
+                        # 错误和紧急日志不延迟
+                        if log_type in ['error', 'emergency', 'critical']:
+                            type_delay_ms = special_delays.get('error_log_delay', 0)
+                        
+                        # 执行延迟（转换为秒）
+                        if type_delay_ms > 0:
+                            delay_seconds = type_delay_ms / 1000.0
+                            time.sleep(delay_seconds)
+                    
+                    except Exception as delay_error:
+                        # 延迟功能出错时不应影响正常日志输出
+                        pass
                 
         except Exception as e:
             # 避免日志方法本身出错导致算法崩溃
-            self.log(f"[{self.time.strftime('%H:%M:')}] ERROR in log_debug: {e}")
+            self.Debug(f"[{self.time.strftime('%H:%M:')}] ERROR in log_debug: {e}")
 
     def _log_daily_report_wrapper(self):
         """收盘后自动输出每日投资组合报告"""

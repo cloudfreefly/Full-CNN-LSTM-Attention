@@ -5,8 +5,8 @@ from AlgorithmImports import *
 class AlgorithmConfig:
     """算法主要配置参数"""
     # 时间设置
-    START_DATE = (2010, 1, 1)
-    END_DATE = (2025, 5, 31)
+    START_DATE = (2022, 1, 1)
+    END_DATE = (2024, 12, 31)
     INITIAL_CASH = 100000
     
     # 股票池配置
@@ -59,7 +59,7 @@ class AlgorithmConfig:
         'log_consolidation': False,           # 关闭日志合并
     }
     
-    # 新增：杠杆配置 - 支持150%最高持仓
+    # 杠杆配置 - Alert Black Bat分析优化，增强动态调整
     LEVERAGE_CONFIG = {
         'enable_leverage': True,              # 启用杠杆功能
         'max_leverage_ratio': 1.5,            # 最大杠杆比例150%
@@ -68,13 +68,27 @@ class AlgorithmConfig:
         'high_risk_leverage_ratio': 0.8,      # 高风险环境下杠杆比例80%
         'extreme_risk_leverage_ratio': 0.5,   # 极端风险环境下杠杆比例50%
         
-        # 风险阈值配置
+        # 风险阈值配置 - Alert Black Bat分析调整
         'low_risk_vix_threshold': 18,         # 低风险VIX阈值
-        'medium_risk_vix_threshold': 25,      # 中等风险VIX阈值
-        'high_risk_vix_threshold': 35,        # 高风险VIX阈值
+        'medium_risk_vix_threshold': 22,      # 中等风险VIX阈值从25降至22
+        'high_risk_vix_threshold': 30,        # 高风险VIX阈值从35降至30
         'low_risk_volatility_threshold': 0.12, # 低风险波动率阈值
         'medium_risk_volatility_threshold': 0.20, # 中等风险波动率阈值
         'high_risk_volatility_threshold': 0.30,   # 高风险波动率阈值
+        
+        # === Alert Black Bat分析：动态杠杆调整配置（更敏感的阈值） ===
+        'enable_drawdown_based_adjustment': True,  # 启用基于回撤的杠杆调整
+        'drawdown_thresholds': {
+            0.01: 1.0,   # 回撤1%时杠杆降至1.0（无杠杆）
+            0.02: 0.95,  # 回撤2%时杠杆降至0.95（5%现金）
+            0.03: 0.9,   # 回撤3%时杠杆降至0.9（10%现金）
+            0.05: 0.8,   # 回撤5%时杠杆降至0.8（20%现金）
+            0.08: 0.7,   # 回撤8%时杠杆降至0.7（30%现金）
+            0.10: 0.6,   # 回撤10%时杠杆降至0.6（40%现金）
+        },
+        'portfolio_performance_lookback': 30,     # 组合表现回望期（交易日）
+        'leverage_recovery_speed': 0.1,           # 杠杆恢复速度（每日最大增幅）
+        'min_recovery_period': 5,                 # 最小恢复等待期（交易日）
         
         # 杠杆成本配置
         'borrowing_cost_annual': 0.03,        # 年化借款成本3%
@@ -85,6 +99,15 @@ class AlgorithmConfig:
         'leverage_adjustment_frequency': 1,    # 杠杆调整频率（天）
         'leverage_smooth_factor': 0.3,        # 杠杆平滑因子（避免频繁调整）
         'min_leverage_change': 0.05,          # 最小杠杆变动幅度5%
+        
+        # === 紧急去杠杆配置 ===
+        'emergency_deleveraging': {
+            'enable_emergency_mode': True,        # 启用紧急去杠杆模式
+            'trigger_drawdown': 0.10,             # 触发紧急去杠杆的回撤阈值10%
+            'emergency_target_leverage': 0.6,     # 紧急模式目标杠杆比例
+            'emergency_adjustment_speed': 0.3,    # 紧急调整速度（每日最大降幅）
+            'recovery_threshold': 0.05,           # 恢复正常的回撤阈值5%
+        }
     }
     
     # 多时间跨度预测配置
@@ -249,9 +272,9 @@ class AlgorithmConfig:
         'correlation_penalty_factor': 0.6,       # 相关性惩罚因子提高至0.6（从0.5）
     }
     
-    # 风险管理配置 - 增强杠杆风险控制
+    # 风险管理配置 - 按Alert Black Bat分析结论强化风险控制
     RISK_CONFIG = {
-        'max_drawdown': 0.08,        # 最大回撤调整至8%（杠杆环境下适度放宽）
+        'max_drawdown': 0.06,        # 最大回撤从8%降至6%（Alert Black Bat分析结论）
         'volatility_threshold': 1.30,  # 年化波动率阈值130%（放宽到合理水平）
         'correlation_threshold': 0.75,  # 相关性阈值75%
         'liquidity_min_volume': 200000,  # 最小日均成交量20万（降低流动性要求）
@@ -261,20 +284,30 @@ class AlgorithmConfig:
         'stop_loss_threshold': -0.05,  # 止损阈值调整至-5%（杠杆环境下适度放宽）
         'take_profit_threshold': 0.15,   # 止盈阈值调整至15%（杠杆环境下适度提高）
         
-        # === 杠杆相关风险控制 ===
-        'leverage_max_drawdown': 0.12,       # 杠杆环境下最大回撤12%
+        # === 杠杆相关风险控制 - Alert Black Bat分析优化 ===
+        'leverage_max_drawdown': 0.08,       # 杠杆环境下最大回撤从12%降至8%
         'leverage_volatility_threshold': 0.20, # 使用杠杆时最大波动率阈值25%
         'leverage_stop_loss': -0.08,         # 杠杆止损阈值-8%
         'leverage_margin_call_level': 0.25,  # 保证金追缴水平25%
         'leverage_liquidation_level': 0.20,  # 强制平仓水平20%
         'leverage_risk_budget': 0.15,        # 杠杆总风险预算15%
         
-        # VIX相关配置
+        # === 动态杠杆调整配置 - 新增Alert Black Bat分析建议 ===
+        'enable_dynamic_leverage_adjustment': True,  # 启用动态杠杆调整
+        'drawdown_leverage_thresholds': {
+            0.05: 1.0,   # 回撤5%时杠杆降至1.0
+            0.10: 0.8,   # 回撤10%时杠杆降至0.8
+            0.15: 0.6,   # 回撤15%时杠杆降至0.6
+        },
+        'portfolio_drawdown_lookback': 20,    # 组合回撤计算回望期（交易日）
+        'leverage_adjustment_smoothing': 0.3, # 杠杆调整平滑因子
+        
+        # VIX相关配置 - Alert Black Bat分析优化
         'vix_rapid_rise_threshold': 0.15,  # VIX快速上升阈值进一步降至15%（从20%）
         'vix_rapid_rise_period': 2,        # VIX快速上升检测周期缩短至2天（从3天）
-        'vix_extreme_level': 25,           # VIX极端水平进一步降至30（从35）
-        'vix_defense_min_equity': 0.30,    # VIX防御模式最小股票仓位30%（现金比例70%）
-        'vix_defense_max_cash': 0.70,      # VIX防御模式最大现金比例70%
+        'vix_extreme_level': 22,           # VIX极端水平从30降至22（Alert Black Bat分析）
+        'vix_defense_min_equity': 0.50,    # VIX防御模式最小股票仓位从30%提升至50%
+        'vix_defense_max_cash': 0.50,      # VIX防御模式最大现金比例从70%降至50%
         'vix_hedging_allocation': 0.30,    # 对冲产品分配比例30%（防御模式基础）
         'vix_extreme_hedging_allocation': 0.50,  # 极端模式下对冲产品分配比例50%
         'vix_normalization_threshold': 18, # VIX正常化阈值进一步降至18（从20）
@@ -288,6 +321,15 @@ class AlgorithmConfig:
         'vix_recovery_max_equity': 0.80,       # 恢复过程中最大股票仓位降至80%（从85%）
         'vix_recovery_hedge_reduction': 0.7,   # 恢复时对冲仓位减少比例提高至70%（从60%）
         'vix_recovery_evaluation_days': 1,     # 恢复状态评估周期缩短至1天（从2天）
+        
+        # === 现金缓冲动态管理 - Alert Black Bat分析新增 ===
+        'dynamic_cash_management': {
+            'enable_dynamic_cash': True,       # 启用动态现金管理
+            'normal_market_cash_range': (-0.02, 0.05),    # 正常市场现金比例范围
+            'volatile_market_cash_range': (0.10, 0.20),   # 波动市场现金比例范围
+            'crisis_market_cash_range': (0.20, 0.40),     # 危机市场现金比例范围
+            'market_condition_indicator': 'vix_and_drawdown',  # 市场状态判断指标
+        }
     }
     
     # 训练控制配置 - 重大改进
@@ -423,20 +465,21 @@ class AlgorithmConfig:
     }
     
     # 日志配置（引用LoggingConfig）
-    # 日志级别控制
+    # 日志级别控制 - Alert Black Bat分析调试增强
     DEBUG_LEVEL = {
-        'training': True,
-        'data': True,
-        'prediction': True,
+        'training': False,
+        'data': False,
+        'prediction': False,
         'portfolio': True,
-        'risk': True,
-        'diversification': True,
-        'system': True,
+        'risk': True,          # 启用风险debug日志 - Alert Black Bat关键
+        'diversification': False,
+        'system': True,        # 启用系统debug日志 - 用于调试
         'optimizer': True,
-        'algorithm': True,
-        'leverage': True,      # 启用杠杆debug日志
+        'algorithm': True,     # 启用算法debug日志 - 用于调试
+        'leverage': True,      # 启用杠杆debug日志 - Alert Black Bat关键
         'trading': True,       # 启用交易debug日志
-        'optimization': True   # 启用优化debug日志
+        'optimization': False,  # 启用优化debug日志
+        'defense': True        # 新增防御模式debug日志
     }
     
     LOGGING_CONFIG = {
@@ -454,8 +497,8 @@ class AlgorithmConfig:
         'date_format': '%Y-%m-%d %H:%M:%S',
         
         # === 日志延迟控制配置 ===
-        'enable_log_delay': False,  # 关闭日志延迟（原来是True）
-        'log_delay_ms': 0,         # 基础日志延迟时间设为0（原来是20毫秒）
+        'enable_log_delay': True,  # 关闭日志延迟（原来是True）
+        'log_delay_ms': 200,         # 基础日志延迟时间设为0（原来是20毫秒）
         
         # 分类别日志延迟配置
         'category_delays': {
@@ -472,7 +515,7 @@ class AlgorithmConfig:
         
         # 动态延迟调整配置
         'dynamic_delay': {
-            'enable_dynamic_delay': False,    # 启用动态延迟调整
+            'enable_dynamic_delay': True,    # 启用动态延迟调整
             'min_delay_ms': 5,               # 最小延迟时间
             'max_delay_ms': 100,             # 最大延迟时间
             'high_frequency_threshold': 10,  # 高频日志阈值（每秒条数）

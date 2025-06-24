@@ -41,6 +41,9 @@ class LeverageManager:
         根据市场风险状况动态调整杠杆水平
         """
         try:
+            # *** Alert Black Bat杠杆管理器执行验证 ***
+            self.algorithm.log_debug("Alert Black Bat杠杆管理器已执行", log_type="risk")
+            
             leverage_config = self.config.LEVERAGE_CONFIG
             
             if not leverage_config.get('enable_leverage', False):
@@ -116,15 +119,15 @@ class LeverageManager:
             return 0.0
     
     def _assess_risk_level(self, vix_level, volatility_level, drawdown_level):
-        """评估市场风险等级"""
+        """评估市场风险等级 - Alert Black Bat分析优化"""
         leverage_config = self.config.LEVERAGE_CONFIG
         
-        # VIX风险评估
+        # VIX风险评估 - 使用Alert Black Bat优化的阈值
         if vix_level < leverage_config.get('low_risk_vix_threshold', 18):
             vix_risk = 'low'
-        elif vix_level < leverage_config.get('medium_risk_vix_threshold', 25):
+        elif vix_level < leverage_config.get('medium_risk_vix_threshold', 22):  # 从25降至22
             vix_risk = 'medium'
-        elif vix_level < leverage_config.get('high_risk_vix_threshold', 35):
+        elif vix_level < leverage_config.get('high_risk_vix_threshold', 30):   # 从35降至30
             vix_risk = 'high'
         else:
             vix_risk = 'extreme'
@@ -139,29 +142,66 @@ class LeverageManager:
         else:
             vol_risk = 'extreme'
         
-        # 回撤风险评估
-        if drawdown_level < 0.05:
+        # === Alert Black Bat分析：强化回撤风险评估 ===
+        if drawdown_level < 0.03:      # 3%以下为低风险
             dd_risk = 'low'
-        elif drawdown_level < 0.10:
+        elif drawdown_level < 0.05:    # 3-5%为中等风险
             dd_risk = 'medium'
-        elif drawdown_level < 0.15:
+        elif drawdown_level < 0.08:    # 5-8%为高风险
             dd_risk = 'high'
-        else:
+        else:                          # 8%以上为极端风险
             dd_risk = 'extreme'
+        
+        # === Alert Black Bat分析：动态杠杆调整逻辑 ===
+        enable_drawdown_adjustment = leverage_config.get('enable_drawdown_based_adjustment', False)
+        
+        if enable_drawdown_adjustment:
+            drawdown_thresholds = leverage_config.get('drawdown_thresholds', {})
+            
+            for threshold in sorted(drawdown_thresholds.keys(), reverse=True):
+                if drawdown_level >= threshold:
+                    # 直接基于回撤设置杠杆，优先级最高
+                    target_leverage = drawdown_thresholds[threshold]
+                    self.algorithm.log_debug(f"Alert Black Bat杠杆: 回撤{drawdown_level:.1%} -> {target_leverage}x", 
+                                           log_type="risk")
+                    # 设置一个特殊标记，表示这是基于回撤的强制调整
+                    self._drawdown_forced_leverage = target_leverage
+                    break
         
         # 综合风险评估（取最高风险等级）
         risk_levels = ['low', 'medium', 'high', 'extreme']
         overall_risk = max([vix_risk, vol_risk, dd_risk], key=lambda x: risk_levels.index(x))
         
-        self.algorithm.log_debug(f"风险评估: VIX={vix_risk}, 波动率={vol_risk}, 回撤={dd_risk}, "
-                               f"综合={overall_risk}", log_type="risk")
+        self.algorithm.log_debug(f"风险评估: VIX={vix_risk}({vix_level:.1f}), 波动率={vol_risk}({volatility_level:.1%}), "
+                               f"回撤={dd_risk}({drawdown_level:.1%}), 综合={overall_risk}", log_type="risk")
         
         return overall_risk
     
     def _get_leverage_by_risk_level(self, risk_level):
-        """根据风险等级获取杠杆比例"""
+        """根据风险等级获取杠杆比例 - Alert Black Bat分析优化"""
         leverage_config = self.config.LEVERAGE_CONFIG
         
+        # === Alert Black Bat分析：优先检查强制杠杆调整 ===
+        if hasattr(self, '_drawdown_forced_leverage'):
+            forced_leverage = self._drawdown_forced_leverage
+            # 清除标记
+            delattr(self, '_drawdown_forced_leverage')
+            self.algorithm.log_debug(f"使用Alert Black Bat强制杠杆: {forced_leverage}x", log_type="risk")
+            return forced_leverage
+        
+        # === 检查紧急去杠杆模式 ===
+        emergency_config = leverage_config.get('emergency_deleveraging', {})
+        if emergency_config.get('enable_emergency_mode', False):
+            current_drawdown = self._get_current_drawdown()
+            trigger_drawdown = emergency_config.get('trigger_drawdown', 0.10)
+            
+            if current_drawdown >= trigger_drawdown:
+                emergency_leverage = emergency_config.get('emergency_target_leverage', 0.6)
+                self.algorithm.log_debug(f"紧急去杠杆模式: 回撤{current_drawdown:.1%}触发，目标杠杆{emergency_leverage}x", 
+                                       log_type="risk")
+                return emergency_leverage
+        
+        # 常规风险等级杠杆映射
         leverage_map = {
             'low': leverage_config.get('low_risk_leverage_ratio', 1.5),
             'medium': leverage_config.get('medium_risk_leverage_ratio', 1.2),
