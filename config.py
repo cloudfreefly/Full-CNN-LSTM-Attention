@@ -502,34 +502,34 @@ class AlgorithmConfig:
         
         # 分类别日志延迟配置
         'category_delays': {
-            'algorithm': 10,        # 算法日志延迟（毫秒）
+            'algorithm': 100,        # 算法日志延迟（毫秒）
             'training': 50,         # 训练日志延迟（毫秒）
-            'portfolio': 15,        # 投资组合日志延迟（毫秒）
-            'risk': 20,            # 风险日志延迟（毫秒）
+            'portfolio': 50,        # 投资组合日志延迟（毫秒）
+            'risk': 100,            # 风险日志延迟（毫秒）
             'system': 30,          # 系统日志延迟（毫秒）
             'data': 40,            # 数据处理日志延迟（毫秒）
-            'prediction': 25,      # 预测日志延迟（毫秒）
-            'optimizer': 35,       # 优化器日志延迟（毫秒）
-            'diversification': 20  # 多元化日志延迟（毫秒）
+            'prediction': 50,      # 预测日志延迟（毫秒）
+            'optimizer': 100,       # 优化器日志延迟（毫秒）
+            'diversification': 50  # 多元化日志延迟（毫秒）
         },
         
         # 动态延迟调整配置
         'dynamic_delay': {
             'enable_dynamic_delay': True,    # 启用动态延迟调整
-            'min_delay_ms': 5,               # 最小延迟时间
-            'max_delay_ms': 100,             # 最大延迟时间
+            'min_delay_ms': 100,               # 最小延迟时间
+            'max_delay_ms': 1000,             # 最大延迟时间
             'high_frequency_threshold': 10,  # 高频日志阈值（每秒条数）
-            'delay_increment_ms': 5,         # 延迟递增步长
+            'delay_increment_ms': 50,         # 延迟递增步长
             'delay_reset_interval': 60       # 延迟重置间隔（秒）
         },
         
         # 特殊情况延迟配置
         'special_delays': {
-            'warmup_period_delay': 5,        # 预热期日志延迟（毫秒）
+            'warmup_period_delay': 10,        # 预热期日志延迟（毫秒）
             'training_period_delay': 100,    # 训练期日志延迟（毫秒）
             'rebalance_period_delay': 30,    # 调仓期日志延迟（毫秒）
-            'error_log_delay': 0,            # 错误日志延迟（毫秒，通常不延迟）
-            'emergency_log_delay': 0,        # 紧急日志延迟（毫秒，不延迟）
+            'error_log_delay': 50,            # 错误日志延迟（毫秒，通常不延迟）
+            'emergency_log_delay': 50,        # 紧急日志延迟（毫秒，不延迟）
             'debug_mode_delay': 50           # 调试模式延迟（毫秒）
         },
         

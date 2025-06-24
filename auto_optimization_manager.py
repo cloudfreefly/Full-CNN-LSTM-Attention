@@ -74,6 +74,11 @@ class QuantConnectOptimizationManager:
         if not self.optimization_enabled:
             return False
         
+        # 添加WarmUp检查，避免在预热期间运行优化
+        if hasattr(self.algorithm, 'IsWarmingUp') and self.algorithm.IsWarmingUp:
+            self.algorithm.log_debug("跳过WarmUp期间的参数优化", log_type="optimization")
+            return False
+        
         # 高性能保护模式：当系统表现优异时，降低优化频率
         current_performance = self._get_current_performance()
         if current_performance:
@@ -443,9 +448,13 @@ class QuantConnectOptimizationManager:
         """获取当前VIX水平"""
         try:
             if hasattr(self.algorithm, 'vix_monitor'):
-                return float(self.algorithm.vix_monitor.current_vix)
+                # 修正属性名，使用_last_vix_value
+                vix_value = getattr(self.algorithm.vix_monitor, '_last_vix_value', None)
+                if vix_value is not None and vix_value > 0:
+                    return float(vix_value)
             return 20.0  # 默认值
-        except:
+        except Exception as e:
+            self.algorithm.log_debug(f"获取VIX水平错误: {e}", log_type="optimization")
             return 20.0
     
     def _get_market_volatility(self) -> float:
@@ -812,7 +821,7 @@ class OptimizationIntegrationExample:
         # if algorithm_instance.optimization_scheduler.optimization_manager.should_run_optimization():
         #     algorithm_instance.optimization_scheduler.force_optimization()
         
-        algorithm_instance.Debug("自动优化系统已集成到主算法")
+        algorithm_instance.log_debug("自动优化系统已集成到主算法", log_type="optimization")
 
 # 配置优化参数的辅助类
 class OptimizationConfigHelper:

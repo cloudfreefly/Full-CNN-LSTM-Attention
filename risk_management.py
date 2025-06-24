@@ -850,18 +850,38 @@ class VIXMonitor:
         # 确保VIX数据已经添加到算法中
         try:
             self.algorithm.AddIndex(self.vix_symbol, Resolution.Daily)
-            self.algorithm.Debug("VIX指数已添加到数据源")
+            self.algorithm.log_debug("VIX指数已添加到数据源", log_type="risk")
         except Exception as e:
-            self.algorithm.Debug(f"添加VIX指数时出错: {e}")
+            self.algorithm.log_debug(f"添加VIX指数时出错: {e}", log_type="risk")
     
     def update_vix_data(self, current_time):
         """更新VIX数据并分析市场风险状态"""
         try:
+            self.algorithm.log_debug(f"========== VIX监控更新开始 ({current_time}) ==========", log_type="risk")
+            
             # 获取VIX历史数据
             vix_data = self._get_vix_historical_data()
+            
             if vix_data is None or len(vix_data) < 2:
-                self.algorithm.Debug("VIX数据不足，无法进行风险分析")
+                self.algorithm.log_debug("警告: VIX数据不足，无法进行完整风险分析", log_type="risk")
+                # 仍然要设置一个基础的VIX值，避免_last_vix_value为空
+                self._last_vix_value = 20.0
+                self.algorithm.log_debug(f"设置默认VIX值: {self._last_vix_value:.1f}", log_type="risk")
                 return self._get_default_risk_state()
+            
+            # 确定数据来源类型
+            data_source = "未知"
+            if len(vix_data) >= 10 and all(isinstance(v, (int, float)) for v in vix_data):
+                # 检查是否为真实数据（通常有更多变化）
+                vix_std = np.std(vix_data) if len(vix_data) > 1 else 0
+                if vix_std > 2.0:
+                    data_source = "真实VIX数据"
+                elif 10 <= min(vix_data) and max(vix_data) <= 60:
+                    data_source = "估算/模拟数据"
+                else:
+                    data_source = "备用数据"
+            
+            self.algorithm.log_debug(f"VIX数据状态: 来源={data_source}, 长度={len(vix_data)}, 当前值={vix_data[-1]:.2f}", log_type="risk")
             
             # 更新VIX历史记录
             self._update_vix_history(vix_data)
@@ -870,7 +890,7 @@ class VIXMonitor:
             vix_change_rate = self._calculate_vix_change_rate()
             
             # 获取当前VIX水平
-            current_vix = vix_data[-1] if len(vix_data) > 0 else 0
+            current_vix = vix_data[-1] if len(vix_data) > 0 else 20.0
             
             # 分析风险状态
             risk_state = self._analyze_vix_risk_state(current_vix, vix_change_rate)
@@ -878,41 +898,87 @@ class VIXMonitor:
             # 记录VIX状态
             self._log_vix_status(current_vix, vix_change_rate, risk_state)
             
+            self.algorithm.log_debug(f"========== VIX监控更新完成 ==========", log_type="risk")
             return risk_state
             
         except Exception as e:
-            self.algorithm.Debug(f"VIX监控更新出错: {e}")
+            error_msg = f"严重错误: VIX监控更新异常 - {str(e)}"
+            self.algorithm.log_debug(error_msg, log_type="risk")
+            
+            # 设置一个基础的VIX值，避免_last_vix_value为空
+            self._last_vix_value = 20.0
+            self.algorithm.log_debug(f"异常恢复: 设置默认VIX值={self._last_vix_value:.1f}", log_type="risk")
             return self._get_default_risk_state()
     
     def _get_vix_historical_data(self):
         """获取VIX历史数据"""
         try:
             lookback_days = self.config.RISK_CONFIG['vix_lookback_days']
+            
             # 尝试获取VIX数据
+            self.algorithm.log_debug(f"尝试从QuantConnect获取VIX数据，回看天数: {lookback_days}", log_type="risk")
             history = self.algorithm.History(self.vix_symbol, lookback_days, Resolution.Daily)
             history_list = list(history)
-            self.algorithm.log_debug(f"[VIX历史] 数据长度: {len(history_list)}, 最近5天: {[x.Close for x in history_list[-5:]] if len(history_list)>=5 else [x.Close for x in history_list]}", log_type="risk")
+            
+            self.algorithm.log_debug(f"[VIX数据获取] 返回数据长度: {len(history_list)}", log_type="risk")
+            
             if len(history_list) == 0:
-                # 如果无法获取VIX数据，尝试使用替代方法
-                self.algorithm.Debug("无法获取VIX数据，使用市场波动率估算")
-                return self._estimate_market_volatility()
-            # 提取VIX收盘价
+                # 明确报错：无法获取VIX数据
+                error_msg = f"错误: 无法从QuantConnect获取VIX数据 (符号: {self.vix_symbol}, 回看: {lookback_days}天)"
+                self.algorithm.log_debug(error_msg, log_type="risk")
+                
+                # 尝试使用SPY估算方法
+                self.algorithm.log_debug("警告: 启用备用方案 - 使用SPY波动率估算VIX", log_type="risk")
+                estimated_values = self._estimate_market_volatility()
+                
+                if estimated_values and len(estimated_values) > 0:
+                    self.algorithm.log_debug(f"备用方案成功: SPY估算VIX值 = {estimated_values[-1]:.2f}", log_type="risk")
+                    return estimated_values
+                else:
+                    self.algorithm.log_debug("警告: SPY估算方法也失败，使用时间周期默认值", log_type="risk")
+                    return self._generate_default_vix_values()
+            
+            # 成功获取VIX数据
             vix_values = [x.Close for x in history_list]
+            self.algorithm.log_debug(f"成功: 获取到真实VIX数据，最近5天: {[f'{v:.2f}' for v in vix_values[-5:]] if len(vix_values)>=5 else [f'{v:.2f}' for v in vix_values]}", log_type="risk")
             return vix_values
+            
         except Exception as e:
-            self.algorithm.Debug(f"获取VIX数据出错: {e}")
-            return None
+            # 明确报错：VIX数据获取异常
+            error_msg = f"严重错误: VIX数据获取异常 - {str(e)}"
+            self.algorithm.log_debug(error_msg, log_type="risk")
+            
+            # 尝试备用方案
+            self.algorithm.log_debug("启动异常恢复: 尝试SPY估算方法", log_type="risk")
+            try:
+                estimated_values = self._estimate_market_volatility()
+                if estimated_values and len(estimated_values) > 0:
+                    self.algorithm.log_debug(f"异常恢复成功: SPY估算VIX = {estimated_values[-1]:.2f}", log_type="risk")
+                    return estimated_values
+            except Exception as e2:
+                self.algorithm.log_debug(f"异常恢复失败: SPY估算也出错 - {str(e2)}", log_type="risk")
+            
+            # 最后备用方案
+            self.algorithm.log_debug("使用最后备用方案: 时间周期默认VIX值", log_type="risk")
+            return self._generate_default_vix_values()
     
     def _estimate_market_volatility(self):
         """当无法获取VIX数据时，使用SPY等市场指数估算波动率"""
         try:
+            self.algorithm.log_debug("开始SPY波动率估算: 获取SPY历史数据", log_type="risk")
+            
             # 使用SPY作为市场代理计算隐含波动率
             spy_history = self.algorithm.History("SPY", 20, Resolution.Daily)
             spy_history_list = list(spy_history)
             
+            self.algorithm.log_debug(f"SPY数据获取结果: 长度={len(spy_history_list)}", log_type="risk")
+            
             if len(spy_history_list) < 10:
+                error_msg = f"错误: SPY历史数据不足 (需要>=10天，实际{len(spy_history_list)}天)"
+                self.algorithm.log_debug(error_msg, log_type="risk")
                 return None
             
+            # 计算波动率
             prices = np.array([x.Close for x in spy_history_list])
             returns = np.diff(prices) / prices[:-1]
             daily_vol = np.std(returns)
@@ -920,9 +986,14 @@ class VIXMonitor:
             # 将日波动率转换为VIX类似的数值（年化百分比）
             estimated_vix = daily_vol * np.sqrt(252) * 100
             
+            self.algorithm.log_debug(f"SPY波动率计算: 日波动率={daily_vol:.4f}, 估算VIX={estimated_vix:.2f}", log_type="risk")
+            
             # 生成最近几天的估算VIX数值
             base_vix = max(10, min(80, estimated_vix))  # 限制在合理范围内
             vix_estimates = []
+            
+            # 设置随机种子以确保可重现性
+            np.random.seed(int(self.algorithm.Time.timestamp()))
             
             for i in range(min(10, len(spy_history_list))):
                 # 添加一些随机波动来模拟VIX变化
@@ -930,12 +1001,70 @@ class VIXMonitor:
                 estimated_value = max(5, base_vix + variation)
                 vix_estimates.append(estimated_value)
             
-            self.algorithm.Debug(f"使用SPY估算的VIX值: {base_vix:.2f}")
+            self.algorithm.log_debug(f"SPY估算完成: 基准VIX={base_vix:.2f}, 序列长度={len(vix_estimates)}, 范围=[{min(vix_estimates):.1f}, {max(vix_estimates):.1f}]", log_type="risk")
             return vix_estimates
             
         except Exception as e:
-            self.algorithm.Debug(f"估算市场波动率出错: {e}")
+            self.algorithm.log_debug(f"估算市场波动率出错: {e}", log_type="risk")
             return None
+    
+    def _generate_default_vix_values(self):
+        """生成合理的默认VIX值序列，基于市场周期"""
+        try:
+            import random
+            import math
+            
+            self.algorithm.log_debug("启动默认VIX生成: 基于时间周期的动态模拟", log_type="risk")
+            
+            # 基于日期和市场周期生成动态默认值
+            current_time = self.algorithm.Time
+            days_since_start = (current_time - self.algorithm.StartDate).days
+            
+            self.algorithm.log_debug(f"时间周期参数: 回测开始日={self.algorithm.StartDate.date()}, 当前日={current_time.date()}, 经过天数={days_since_start}", log_type="risk")
+            
+            # 创建基于时间的周期性VIX模拟
+            base_vix = 18.0  # 长期VIX平均值
+            
+            # 添加季度性周期（每90天一个周期）
+            quarterly_cycle = math.sin(2 * math.pi * days_since_start / 90) * 3
+            
+            # 添加年度性周期（每250天一个周期，对应交易日年）
+            annual_cycle = math.sin(2 * math.pi * days_since_start / 250) * 5
+            
+            # 添加随机波动
+            random.seed(days_since_start)  # 确保可重现性
+            daily_noise = random.uniform(-2, 2)
+            
+            # 计算当前VIX估值
+            current_vix = base_vix + quarterly_cycle + annual_cycle + daily_noise
+            current_vix = max(10.0, min(60.0, current_vix))  # 限制在合理范围
+            
+            # 生成过去10天的VIX序列
+            vix_sequence = []
+            for i in range(10):
+                day_offset = i - 9
+                day_cycle = math.sin(2 * math.pi * (days_since_start + day_offset) / 90) * 3
+                year_cycle = math.sin(2 * math.pi * (days_since_start + day_offset) / 250) * 5
+                random.seed(days_since_start + day_offset)
+                noise = random.uniform(-1.5, 1.5)
+                
+                day_vix = base_vix + day_cycle + year_cycle + noise
+                day_vix = max(10.0, min(60.0, day_vix))
+                vix_sequence.append(day_vix)
+            
+            self.algorithm.log_debug(f"默认VIX生成完成: 当前值={current_vix:.2f}, 序列长度={len(vix_sequence)}, 范围=[{min(vix_sequence):.1f}, {max(vix_sequence):.1f}]", log_type="risk")
+            self.algorithm.log_debug(f"注意: 这是模拟VIX值，非真实市场数据", log_type="risk")
+            
+            return vix_sequence
+            
+        except Exception as e:
+            error_msg = f"严重错误: 默认VIX生成失败 - {str(e)}"
+            self.algorithm.log_debug(error_msg, log_type="risk")
+            
+            # 最后的备用方案：一个合理的固定序列
+            fallback_sequence = [16.5, 17.2, 18.1, 19.3, 20.5, 19.8, 18.9, 17.6, 18.4, 19.1]
+            self.algorithm.log_debug(f"使用固定备用序列: 长度={len(fallback_sequence)}, 当前值={fallback_sequence[-1]:.1f}", log_type="risk")
+            return fallback_sequence
     
     def _update_vix_history(self, vix_data):
         """更新VIX历史记录"""
@@ -953,6 +1082,7 @@ class VIXMonitor:
         # 更新最后的VIX值
         if len(vix_data) > 0:
             self._last_vix_value = vix_data[-1]
+            self.algorithm.log_debug(f"VIX监控器更新: _last_vix_value = {self._last_vix_value:.2f}", log_type="risk")
     
     def _calculate_vix_change_rate(self):
         """计算VIX变化率"""

@@ -137,6 +137,10 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
         self.volatility_monitor = VolatilityMonitor(self)
         self.concentration_limiter = ConcentrationLimiter(self)
         
+        # 将VIX监控器暴露给算法实例，供其他模块访问
+        self.vix_monitor = self.risk_manager.vix_monitor
+        self.log_debug("VIX监控器已暴露给算法实例", log_type="system")
+        
         # VIX风险管理和对冲模块 - 通过RiskManager访问
         self.hedging_manager = HedgingManager(self)
         
@@ -495,11 +499,18 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
             # 重新优化投资组合以确保权重和符号匹配
             risk_adjusted_returns_array = np.array([risk_adjusted_returns[s] for s in risk_filtered_symbols])
             
+            self.log_debug(f"杠杆更新开始", log_type="leverage")
+
             # 更新杠杆管理器状态
             if hasattr(self, 'leverage_manager'):
+                self.log_debug("Before update leverage ratio", log_type="algorithm")
+                self.log_debug("正式回测期间调用杠杆管理器", log_type="risk")  # 添加调试日志
                 self.leverage_manager.update_leverage_ratio()
                 current_leverage = self.leverage_manager.get_current_leverage_ratio()
+                self.log_debug("After update leverage ratio", log_type="algorithm")
                 self.log_debug(f"杠杆更新完成，当前杠杆比例: {current_leverage:.2f}", log_type="leverage")
+            else:
+                self.log_debug("杠杆管理器未初始化", log_type="risk")  # 添加调试日志
             
             weights, final_valid_symbols = self.portfolio_optimizer.optimize_portfolio(
                 risk_adjusted_returns_array, covariance_matrix, risk_filtered_symbols
@@ -927,7 +938,11 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
         try:
             # 临时调试：先尝试直接输出，如果失败再使用复杂逻辑
             if hasattr(self, '_simple_log_mode') and self._simple_log_mode:
-                prefix = f"[{self.time.strftime('%H:%M:')}] {log_type}: " if log_type != "general" else f"[{self.time.strftime('%H:%M:')}] "
+                current_date = self.Time.strftime('%Y-%m-%d %H:%M:%S')
+                if log_type != "general":
+                    prefix = f"[{current_date}] {log_type}: "
+                else:
+                    prefix = f"[{current_date}] "
                 self.Debug(f"{prefix}{message}")
                 return
             
@@ -989,9 +1004,15 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
             
             # 输出消息
             if self.config.DEBUG_LEVEL.get(log_type, True):
-                prefix = f"[{self.time.strftime('%H:%M:')}] {log_type}: " if log_type != "general" else f"[{self.time.strftime('%H:%M:')}] "
+                # 格式化日期时间：显示完整日期和时间
+                current_date = self.Time.strftime('%Y-%m-%d %H:%M:%S')
+                if log_type != "general":
+                    prefix = f"[{current_date}] {log_type}: "
+                else:
+                    prefix = f"[{current_date}] "
                 self.Debug(f"{prefix}{message}")
-                
+                time.sleep(0.2)
+                #self.Debug("After sleep 0.2")
                 # === 实现日志延迟功能 ===
                 if logging_config.get('enable_log_delay', False):
                     try:
@@ -1052,7 +1073,9 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
                         # 执行延迟（转换为秒）
                         if type_delay_ms > 0:
                             delay_seconds = type_delay_ms / 1000.0
+                            #self.Debug(f"Delaying for {delay_seconds} seconds")
                             time.sleep(delay_seconds)
+                            #self.Debug(f"After sleep{delay_seconds}")
                     
                     except Exception as delay_error:
                         # 延迟功能出错时不应影响正常日志输出
@@ -1060,7 +1083,12 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
                 
         except Exception as e:
             # 避免日志方法本身出错导致算法崩溃
-            self.Debug(f"[{self.time.strftime('%H:%M:')}] ERROR in log_debug: {e}")
+            try:
+                current_date = self.Time.strftime('%Y-%m-%d %H:%M:%S')
+                self.Debug(f"[{current_date}] ERROR in log_debug: {e}")
+            except:
+                # 如果连时间格式化都失败，使用最简单的格式
+                self.Debug(f"ERROR in log_debug: {e}")
 
     def _log_daily_report_wrapper(self):
         """收盘后自动输出每日投资组合报告"""

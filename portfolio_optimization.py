@@ -854,7 +854,10 @@ class PortfolioOptimizer:
             # 获取VIX水平
             vix_level = 20
             if hasattr(self.algorithm, 'vix_monitor'):
-                vix_level = getattr(self.algorithm.vix_monitor, '_current_vix', 20)
+                # 修正属性名，使用_last_vix_value而不是_current_vix
+                vix_level = getattr(self.algorithm.vix_monitor, '_last_vix_value', 20)
+                if vix_level is None or vix_level <= 0:
+                    vix_level = 20
             
             # 根据Alert Black Bat分析结论判断市场状况
             if current_drawdown >= 0.10 or vix_level >= 30:

@@ -94,9 +94,19 @@ class LeverageManager:
         """获取VIX水平"""
         try:
             if hasattr(self.algorithm, 'vix_monitor'):
-                return getattr(self.algorithm.vix_monitor, '_current_vix', 20)
-            return 20  # 默认中等水平
-        except:
+                # 正确的属性名是_last_vix_value，不是_current_vix
+                vix_value = getattr(self.algorithm.vix_monitor, '_last_vix_value', None)
+                if vix_value is not None and vix_value > 0:
+                    self.algorithm.log_debug(f"从VIX监控器获取到VIX值: {vix_value:.2f}", log_type="risk")
+                    return vix_value
+                else:
+                    self.algorithm.log_debug("VIX监控器中无有效VIX值，使用默认值20", log_type="risk")
+                    return 20
+            else:
+                self.algorithm.log_debug("算法中无VIX监控器，使用默认VIX值20", log_type="risk")
+                return 20  # 默认中等水平
+        except Exception as e:
+            self.algorithm.log_debug(f"获取VIX水平错误: {e}，使用默认值20", log_type="risk")
             return 20
     
     def _get_volatility_level(self):
@@ -212,38 +222,37 @@ class LeverageManager:
         return leverage_map.get(risk_level, 1.0)
     
     def update_leverage_ratio(self):
-        """更新当前杠杆比例"""
+        """更新杠杆比例"""
         try:
+            self.algorithm.log_debug("update_leverage_ratio方法已调用", log_type="risk")  # 添加调试日志
+            
+            # 计算新的目标杠杆比例
             target_leverage = self.calculate_target_leverage_ratio()
             
             # 检查是否需要更新
-            if self._should_update_leverage():
+            if self._should_update_leverage(target_leverage):
                 self._current_leverage_ratio = target_leverage
                 self._last_leverage_update = self.algorithm.Time
                 
-                # 记录杠杆变化
+                # 记录杠杆历史
                 self._leverage_history.append({
-                    'time': self.algorithm.Time,
+                    'timestamp': self.algorithm.Time,
                     'leverage_ratio': target_leverage,
                     'risk_level': self._risk_level
                 })
                 
                 # 限制历史记录长度
                 if len(self._leverage_history) > 100:
-                    self._leverage_history = self._leverage_history[-100:]
+                    self._leverage_history = self._leverage_history[-50:]
                 
-                self.algorithm.log_debug(f"杠杆更新: {self._current_leverage_ratio:.2f}x "
-                                       f"(风险等级: {self._risk_level})", log_type="risk")
+                self.algorithm.log_debug(f"杠杆已更新: {target_leverage:.2f}x", log_type="risk")
+            else:
+                self.algorithm.log_debug(f"杠杆无需更新，保持: {self._current_leverage_ratio:.2f}x", log_type="risk")
                 
-                return True
-            
-            return False
-            
         except Exception as e:
-            self.algorithm.log_debug(f"杠杆更新错误: {e}", log_type="risk")
-            return False
+            self.algorithm.log_debug(f"杠杆更新失败: {e}", log_type="risk")
     
-    def _should_update_leverage(self):
+    def _should_update_leverage(self, target_leverage):
         """判断是否应该更新杠杆比例"""
         leverage_config = self.config.LEVERAGE_CONFIG
         update_frequency = leverage_config.get('leverage_adjustment_frequency', 1)
@@ -256,7 +265,7 @@ class LeverageManager:
         
         # 检查杠杆变化幅度
         min_change = leverage_config.get('min_leverage_change', 0.05)
-        leverage_change = abs(self._target_leverage_ratio - self._current_leverage_ratio)
+        leverage_change = abs(target_leverage - self._current_leverage_ratio)
         
         return leverage_change >= min_change
     
