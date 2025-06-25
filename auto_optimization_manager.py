@@ -448,13 +448,18 @@ class QuantConnectOptimizationManager:
         """获取当前VIX水平"""
         try:
             if hasattr(self.algorithm, 'vix_monitor'):
-                # 修正属性名，使用_last_vix_value
                 vix_value = getattr(self.algorithm.vix_monitor, '_last_vix_value', None)
                 if vix_value is not None and vix_value > 0:
+                    self.algorithm.log_debug(f"自动优化管理器获取到VIX数据: {vix_value:.2f}", log_type="optimization")
                     return float(vix_value)
-            return 20.0  # 默认值
+                else:
+                    self.algorithm.log_debug("自动优化管理器: VIX监控器无有效数据，使用默认值20.0", log_type="optimization")
+                    return 20.0
+            else:
+                self.algorithm.log_debug("自动优化管理器: 无VIX监控器，使用默认值20.0", log_type="optimization")
+                return 20.0
         except Exception as e:
-            self.algorithm.log_debug(f"获取VIX水平错误: {e}", log_type="optimization")
+            self.algorithm.log_debug(f"获取VIX水平错误: {e}，使用默认值20.0", log_type="optimization")
             return 20.0
     
     def _get_market_volatility(self) -> float:

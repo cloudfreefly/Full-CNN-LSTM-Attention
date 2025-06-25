@@ -1,0 +1,1269 @@
+from AlgorithmImports import *
+
+import numpy as np
+
+import pandas as pd
+
+from sklearn.decomposition import PCA
+
+from sklearn.linear_model import LinearRegression
+
+from sklearn.preprocessing import StandardScaler
+
+from collections import deque
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import csv
+from datetime import datetime
+
+
+class LSTMAttention(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers, dropout=0.2):
+        super(LSTMAttention, self).__init__()
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        
+        # LSTM层
+        self.lstm = nn.LSTM(
+            input_size=input_size,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            batch_first=True,
+            dropout=dropout if num_layers > 1 else 0
+        )
+        
+        # 注意力机制
+        self.attention = nn.Sequential(
+            nn.Linear(hidden_size, hidden_size),
+            nn.Tanh(),
+            nn.Linear(hidden_size, 1)
+        )
+        
+        # 输出层
+        self.fc = nn.Sequential(
+            nn.Linear(hidden_size, hidden_size),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_size, 1)
+        )
+    
+    def forward(self, x):
+        # LSTM前向传播
+        lstm_out, _ = self.lstm(x)  # [batch_size, seq_len, hidden_size]
+        
+        # 计算注意力权重
+        attention_weights = self.attention(lstm_out)  # [batch_size, seq_len, 1]
+        attention_weights = torch.softmax(attention_weights, dim=1)
+        
+        # 应用注意力权重
+        context = torch.sum(attention_weights * lstm_out, dim=1)  # [batch_size, hidden_size]
+        
+        # 输出预测
+        out = self.fc(context)
+        return out, attention_weights
+
+
+class CombinedMLTradingStrategy(QCAlgorithm):
+    def Initialize(self):
+        self.SetStartDate(2010, 1, 1)
+        self.SetEndDate(2025, 1, 1)
+        self.SetCash(100000)
+        
+        # 设置账户类型为Margin，允许使用杠杆
+        self.SetBrokerageModel(BrokerageName.InteractiveBrokersBrokerage, AccountType.Margin)
+        
+        # 杠杆使用相关参数
+        self.max_leverage = 1.2          # 最大允许使用的杠杆率(120%)
+        self.low_risk_leverage = 1.2     # 低风险环境下的杠杆率
+        self.high_risk_leverage = 1.0    # 高风险环境下的杠杆率(不使用杠杆)
+        self.vix_leverage_threshold = 18 # VIX低于此值视为低风险环境
+        
+        self.max_drawdown_limit = 0.15  # 调整单只股票最大允许回撤至15%
+        
+        # 整体回撤控制参数
+        self.portfolio_max_drawdown = 0.20  # 将投资组合最大允许回撤从15%提高到20%
+        self.peak_portfolio_value = 0       # 投资组合历史最高价值
+        self.risk_reduction_mode = False    # 高风险模式标志
+        self.risk_recovery_threshold = 0.03 # 只需要恢复3%(原为5%)就退出风险模式
+        
+        # 止损相关参数
+        self.stop_loss_params = {
+            'base_stop_loss': 0.18,    # 提高基础止损比例到18%(原为15%)
+            'volatility_multiplier': 0.9,  # 提高波动率调整因子到0.9(原为0.7)
+            'trailing_stop_pct': 0.15,  # 放宽跟踪止损比例至15%(原为10%)
+            'vol_lookback': 20,        # 波动率计算周期保持不变
+        }
+        
+        # 清仓阈值调整
+        self.liquidation_base_threshold = -0.004  # 将基础清仓阈值从-0.002降至-0.004，减少清仓频率
+        self.consecutive_negative_signals = {}  # 跟踪连续负信号 {symbol: count}
+        self.max_consecutive_negative = 5  # 将连续负信号次数从3增加到5，减少因短期波动而清仓
+        
+        # 记录股票高点价格和高点收益率
+        self.stock_high_prices = {}    # 记录每只股票的历史最高价格
+        self.stock_high_returns = {}   # 记录每只股票的历史最高回报率
+        
+        # 深度学习模型参数
+        self.lookback = 55
+        self.feature_count = 2  # price_change, overnight_gap
+        self.hidden_size = 64
+        self.num_layers = 2
+        self.dropout = 0.2
+        self.learning_rate = 0.001
+        self.batch_size = 32
+        self.epochs = 100
+        
+        # 初始化模型、优化器和损失函数
+        self.device = torch.device('cpu')
+        self.models = {}
+        self.optimizers = {}
+        self.criterion = nn.MSELoss()
+        
+        # VIX LSTM parameters
+        self.vix_lookback = 55
+        self.vix_hidden_size = 64
+        self.vix_num_layers = 2
+        self.vix_dropout = 0.2
+        self.vix_threshold_low = 15
+        self.vix_threshold_high = 30
+        self.max_position = 1.0
+        self.min_position = 0.3
+        
+        # 初始化VIX LSTM模型
+        self.vix_model = LSTMAttention(
+            input_size=1,
+            hidden_size=self.vix_hidden_size,
+            num_layers=self.vix_num_layers,
+            dropout=self.vix_dropout
+        ).to(self.device)
+        self.vix_optimizer = optim.Adam(self.vix_model.parameters(), lr=self.learning_rate)
+
+        self.symbols = [self.AddEquity(ticker, Resolution.Daily).Symbol for ticker in ["SPY", "AAPL", "MSFT", "GOOG", "AMZN", "FB", "TSLA", "AVGO", "NFLX", "NVDA"]]
+        self.ma9_dict = {symbol: self.SMA(symbol, 9, Resolution.Daily) for symbol in self.symbols}
+        self.SetWarmUp(200)
+        self.peak_prices = {symbol: 0 for symbol in self.symbols}
+
+        # 初始化每个股票的LSTM模型
+        for symbol in self.symbols:
+            self.models[symbol] = LSTMAttention(
+                input_size=self.feature_count,
+                hidden_size=self.hidden_size,
+                num_layers=self.num_layers,
+                dropout=self.dropout
+            ).to(self.device)
+            self.optimizers[symbol] = optim.Adam(self.models[symbol].parameters(), lr=self.learning_rate)
+
+        # Initialize StandardScaler for features
+        self.scalers = {symbol: StandardScaler() for symbol in self.symbols}
+        self.vix_scaler = StandardScaler()
+
+        # PCA and Linear Regression parameters
+        self.cci_periods = range(5, 30, 5)  # CCI periods: 5, 10, 15, 20, 25
+        self.pca = PCA(n_components=2)
+        self.regression_model = LinearRegression()
+        self.lr_lookback = 3
+        self.lr_predictions = {symbol: 0 for symbol in self.symbols}
+        self.predicted_returns_window = deque(maxlen=50)
+        self.is_trained = False
+        self.last_trade_date = None
+
+        # 添加VIX指数
+        self.vix_symbol = self.AddIndex("VIX").Symbol
+        self.spy_symbol = self.AddEquity("SPY", Resolution.Daily).Symbol
+
+        # 交易日志相关
+        self.trade_log = []  # 用于存储交易记录
+        self.trade_log_columns = ["日期", "股票", "交易类型", "价格", "数量", "金额", "信号值", "目标仓位"]
+
+        # 交易盈亏跟踪
+        self.positions_entry = {}  # 记录每个持仓的进入价格和数量 {symbol: {'price': price, 'quantity': quantity, 'date': date}}
+        self.closed_trades = []  # 记录已平仓的交易 
+        self.closed_trades_columns = ["股票", "进入日期", "退出日期", "持有天数", "进入价格", "退出价格", "数量", "盈亏金额", "盈亏百分比", "交易类型"]
+
+        for symbol in self.symbols:
+            self.TrainModel(symbol)
+            self.TrainLinearRegressionModel(symbol)
+        
+        self.Schedule.On(self.DateRules.EveryDay(self.symbols[0]), self.TimeRules.AfterMarketOpen(self.symbols[0]), self.Trade)
+
+    def TrainModel(self, symbol):
+        history = self.History(symbol, self.lookback + 255, Resolution.Daily)
+        if history.empty or 'close' not in history.columns or len(history) < self.lookback + 1:
+            self.Debug(f"Invalid or insufficient history data for training on {symbol}.")
+            return
+
+        # 准备训练数据
+        features, targets = self.PrepareTrainingData(history, symbol)
+        if len(features) == 0 or len(targets) == 0:
+            return
+
+        # 转换为PyTorch张量
+        features_tensor = torch.FloatTensor(features).to(self.device)
+        targets_tensor = torch.FloatTensor(targets).to(self.device)
+        
+        # 创建数据加载器
+        dataset = torch.utils.data.TensorDataset(features_tensor, targets_tensor)
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
+
+        # 训练模型
+        self.models[symbol].train()
+        for epoch in range(self.epochs):
+            epoch_loss = 0
+            for batch_features, batch_targets in dataloader:
+                self.optimizers[symbol].zero_grad()
+                predictions, _ = self.models[symbol](batch_features)
+                loss = self.criterion(predictions.squeeze(), batch_targets.squeeze())
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.models[symbol].parameters(), 1.0)
+                self.optimizers[symbol].step()
+                epoch_loss += loss.item()
+
+            if epoch % 10 == 0:
+                self.Debug(f"Symbol: {symbol}, Epoch: {epoch}, Loss: {epoch_loss/len(dataloader):.6f}")
+
+    def PrepareTrainingData(self, history, symbol):
+        features = []
+        targets = []
+        
+        for i in range(len(history) - self.lookback):
+            feature_window = history.iloc[i:i + self.lookback]
+            target_idx = i + self.lookback
+            
+            if target_idx < len(history):
+                feature = self.GetFeaturesFromHistory(feature_window)
+                if feature is not None:
+                    target = (history['close'].iloc[target_idx] - history['open'].iloc[target_idx]) / history['open'].iloc[target_idx]
+                    features.append(feature)
+                    targets.append([target])
+
+        if len(features) == 0:
+            return [], []
+
+        features = np.array(features)
+        targets = np.array(targets)
+        
+        # 标准化特征
+        features_scaled = self.scalers[symbol].fit_transform(features.reshape(-1, self.feature_count)).reshape(features.shape)
+        
+        return features_scaled, targets
+
+    def PredictReturns(self, symbol, features):
+        if features is None:
+            return 0
+        
+        # 确保对features进行适当的处理
+        features_np = np.array(features)
+        
+        # 检查scaler是否已经fit过
+        # 如果没有，我们需要获取历史数据来fit
+        if not hasattr(self, f'scaler_{symbol}_fitted') or not getattr(self, f'scaler_{symbol}_fitted'):
+            history = self.History(symbol, 200, Resolution.Daily)
+            if not history.empty and 'close' in history.columns:
+                # 提取足够的特征数据进行fit
+                all_features = []
+                for i in range(len(history) - self.lookback):
+                    if i + self.lookback < len(history):
+                        feature = self.GetFeaturesFromHistory(history.iloc[i:i+self.lookback+1])
+                        if feature is not None:
+                            all_features.append(feature)
+                
+                if len(all_features) > 0:
+                    all_features = np.array(all_features)
+                    self.scalers[symbol].fit(all_features.reshape(-1, self.feature_count))
+                    setattr(self, f'scaler_{symbol}_fitted', True)
+                    self.Debug(f"Fitted scaler for {symbol} with {len(all_features)} samples")
+                else:
+                    # 如果无法获取足够的数据来fit，简单地使用恒等变换
+                    return 0.001  # 返回小的正值而不是平均值
+            else:
+                # 如果无法获取历史数据，返回小的正值
+                return 0.001
+            
+        # 执行transform变换
+        try:
+            features_scaled = self.scalers[symbol].transform(features_np.reshape(-1, self.feature_count)).reshape(features_np.shape)
+            features_tensor = torch.FloatTensor(features_scaled).unsqueeze(0).to(self.device)
+        except Exception as e:
+            self.Debug(f"Error in transform for {symbol}: {e}")
+            # 如果transform失败，返回小的正值作为后备
+            return 0.001
+            
+        # 预测
+        self.models[symbol].eval()
+        with torch.no_grad():
+            prediction, attention_weights = self.models[symbol](features_tensor)
+            
+            # 记录注意力权重，用于分析
+            try:
+                attention = attention_weights.squeeze().cpu().numpy()
+                self.Debug(f"Attention weights for {symbol}: {attention}")
+            except:
+                pass
+            
+            # 预测值偏移校正，避免持续出现负值预测
+            raw_prediction = prediction.item()
+            
+            # 应用偏移修正，确保预测值分布更均衡
+            # 如果预测值小于-0.002，将其拉近零点，减少极端负值
+            if raw_prediction < -0.002:
+                adjusted_prediction = raw_prediction * 0.5
+            else:
+                adjusted_prediction = raw_prediction
+                
+            # 给预测值增加小的正向偏移，减少负信号频率
+            corrected_prediction = adjusted_prediction + 0.0015
+            
+            return corrected_prediction
+
+    def TrainLinearRegressionModel(self, symbol):
+        try:
+            history = self.History(symbol, self.lookback + 300, Resolution.Daily)  # 增加历史数据长度
+            if history.empty or 'close' not in history.columns:
+                self.Debug(f"Historical data for {symbol} is unavailable or missing 'close' column.")
+                return
+                
+            # 计算CCI值
+            cci_values = self.CalculateCCI(history, self.cci_periods)
+            if cci_values.empty:
+                self.Debug(f"无法计算{symbol}的CCI值，跳过线性回归模型训练")
+                return
+                
+            future_returns = history['close'].pct_change(self.lr_lookback).shift(-self.lr_lookback)
+            
+            # 移除缺失值
+            cci_values.dropna(inplace=True)
+            future_returns.dropna(inplace=True)
+            
+            # 确保有共同的索引
+            common_index = cci_values.index.intersection(future_returns.index)
+            if len(common_index) < 10:  # 至少需要10个样本
+                self.Debug(f"Insufficient data for {symbol} after removing NaN values")
+                return
+                
+            cci_values = cci_values.loc[common_index]
+            future_returns = future_returns.loc[common_index]
+            
+            # 确保没有NaN值
+            if cci_values.isnull().values.any():
+                self.Debug(f"CCI values still contain NaN for {symbol}, filling with mean")
+                for col in cci_values.columns:
+                    col_mean = cci_values[col].mean()
+                    if np.isnan(col_mean):  # 如果均值也是NaN
+                        col_mean = 0  # 使用中间值
+                    cci_values[col] = cci_values[col].fillna(col_mean)
+            
+            # 处理极端值
+            # 对CCI值进行截断，减少异常值影响
+            for col in cci_values.columns:
+                # 计算95%分位数作为截断阈值
+                q_low = cci_values[col].quantile(0.025)
+                q_high = cci_values[col].quantile(0.975)
+                cci_values[col] = cci_values[col].clip(q_low, q_high)
+                
+            # 拟合PCA和线性回归
+            try:
+                self.pca.fit(cci_values)
+                pca_features = self.pca.transform(cci_values)
+                self.regression_model.fit(pca_features, future_returns)
+                self.is_trained = True
+                self.Debug(f"Linear Regression model trained on historical data for {symbol} with {len(common_index)} samples")
+            except Exception as e:
+                self.Debug(f"PCA或线性回归训练失败: {e}")
+        except Exception as e:
+            self.Debug(f"TrainLinearRegressionModel函数发生异常: {e}")
+
+    def CalculateCCI(self, history, periods):
+        """
+        计算商品通道指数(CCI)，替代原来的RSI指标
+        CCI = (TP - SMA(TP, n)) / (0.015 * MD)
+        其中 TP = (High + Low + Close) / 3
+             MD = Mean Deviation of TP
+        """
+        try:
+            if history.empty or 'close' not in history.columns or 'high' not in history.columns or 'low' not in history.columns:
+                self.Debug(f"History data is unavailable or missing required columns.")
+                return pd.DataFrame()  # 返回一个空的 DataFrame
+
+            # 确保历史数据至少等于最大周期长度
+            max_period = max(periods) if periods else 0
+            if len(history) < max_period:
+                self.Debug(f"历史数据长度不足, 需要至少 {max_period} 个数据点")
+                return pd.DataFrame()
+
+            # 计算典型价格(TP)
+            history['tp'] = (history['high'] + history['low'] + history['close']) / 3
+
+            cci_data = {}
+            for period in periods:
+                try:
+                    # 计算移动平均
+                    ma = history['tp'].rolling(window=period).mean()
+                    
+                    # 计算平均偏差
+                    mean_deviation = np.zeros(len(history))
+                    for i in range(period - 1, len(history)):
+                        mean_deviation[i] = np.mean(np.abs(history['tp'].iloc[i-period+1:i+1] - ma[i]))
+                    
+                    # 创建与history索引相同的Series
+                    mean_deviation_series = pd.Series(mean_deviation, index=history.index)
+                    
+                    # 处理可能的零值，避免除以零
+                    mean_deviation_series = mean_deviation_series.replace(0, 1e-8)
+                    
+                    # 计算CCI，确保所有操作数都具有相同的索引
+                    cci = (history['tp'] - ma) / (0.015 * mean_deviation_series)
+                    
+                    # 处理无穷值
+                    cci = cci.replace([np.inf, -np.inf], np.nan)
+                    
+                    cci_data[f'CCI_{period}'] = cci
+                except Exception as e:
+                    self.Debug(f"计算CCI_{period}时出错: {e}")
+                    # 如果某个周期的计算失败，使用NaN填充
+                    cci_data[f'CCI_{period}'] = pd.Series(np.nan, index=history.index)
+            
+            # 创建包含所有CCI周期的DataFrame
+            result_df = pd.DataFrame(cci_data)
+            return result_df
+            
+        except Exception as e:
+            self.Debug(f"CalculateCCI函数发生异常: {e}")
+            return pd.DataFrame()  # 出错时返回空DataFrame
+
+    def Trade(self):
+        if not self.is_trained or self.IsWarmingUp:
+            return
+  
+        # 监控投资组合总体回撤风险
+        portfolio_risk_triggered = self.MonitorPortfolioDrawdown()
+        
+        # 如果触发了组合风险控制，立即降低风险敞口
+        if portfolio_risk_triggered:
+            self.ReduceRiskExposure()
+            # 如果是刚刚进入风险模式，可以提前结束本次交易周期
+            if self.risk_reduction_mode:
+                self.Debug("进入投资组合风险控制模式，暂停新增仓位")
+                return
+
+        # 使用LSTM预测VIX风险并获取风险调整后的最大仓位
+        max_total_position = self.PredictVixRisk()
+        
+        # 如果处于风险模式，进一步降低最大仓位
+        if self.risk_reduction_mode:
+            original_max_position = max_total_position
+            max_total_position = min(max_total_position, 0.6)  # 风险模式下最大仓位提高到60%(原为40%)
+            self.Debug(f"风险控制模式: 将最大允许仓位从 {original_max_position:.2%} 降至 {max_total_position:.2%}")
+        else:
+            # 记录当前杠杆使用情况
+            current_leverage = self.Portfolio.TotalMarginUsed / self.Portfolio.TotalPortfolioValue if self.Portfolio.TotalPortfolioValue > 0 else 0
+            if max_total_position > 1.0:
+                self.Debug(f"允许使用杠杆，最大目标仓位: {max_total_position:.2%}，当前使用杠杆率: {current_leverage:.2%}")
+
+        # 收集所有需要交易的股票及其目标配置
+        trade_targets = {}
+        total_target_allocation = 0
+
+        # 记录需要保持的现有仓位
+        existing_holdings = {}
+        for symbol in self.Portfolio.Keys:
+            if symbol in self.symbols:  # 只考虑我们交易的股票
+                holding = self.Portfolio[symbol].Quantity * self.Portfolio[symbol].Price / self.Portfolio.TotalPortfolioValue
+                existing_holdings[symbol] = holding
+        
+        # 首先检查所有持仓是否需要触发止损
+        for symbol in self.symbols:
+            if symbol in self.Portfolio and self.Portfolio[symbol].Quantity > 0:
+                # 检查是否触发跟踪止损或动态止损
+                if self.CheckTrailingStop(symbol) or self.CheckDynamicStopLoss(symbol):
+                    self.Liquidate(symbol)
+                    self.Debug(f"止损清仓 {symbol} - 执行止损策略")
+                    # 记录交易日志
+                    current_holding = self.Portfolio[symbol].Quantity
+                    current_price = self.Securities[symbol].Price
+                    trade_amount = current_holding * current_price
+                    self.LogTrade(symbol, "止损清仓", current_price, current_holding, trade_amount, 0, 0)
+                    # 从已有持仓中移除
+                    if symbol in existing_holdings:
+                        del existing_holdings[symbol]
+
+        for symbol in self.symbols:
+            if not self.ma9_dict[symbol].IsReady or not self.Securities[symbol].HasData:
+                continue
+
+            current_price = self.Securities[symbol].Price
+            # 更新历史最高价格
+            self.peak_prices[symbol] = max(self.peak_prices[symbol], current_price)
+
+            # 计算回撤
+            drawdown = (self.peak_prices[symbol] - current_price) / self.peak_prices[symbol]
+            if drawdown > self.max_drawdown_limit:
+                continue
+
+            # 使用LSTM模型预测
+            features = self.GetFeatures(symbol)
+            if features is not None:
+                try:
+                    prediction = self.PredictReturns(symbol, features)
+                    
+                    # 结合线性回归预测
+                    lr_prediction = 0
+                    try:
+                        current_data = self.History(symbol, max(self.cci_periods) + 5, Resolution.Daily)  # 多获取几个数据点以确保足够
+                        if not current_data.empty and 'close' in current_data.columns and 'high' in current_data.columns and 'low' in current_data.columns:
+                            # 计算CCI
+                            current_cci_df = self.CalculateCCI(current_data, self.cci_periods)
+                            
+                            # 检查是否有足够的数据
+                            if current_cci_df.empty:
+                                self.Debug(f"Empty CCI dataframe for {symbol}")
+                                lr_prediction = 0
+                            else:
+                                # 先删除包含NaN的行
+                                current_cci_df = current_cci_df.dropna()
+                                
+                                # 再次检查是否有足够的数据
+                                if current_cci_df.empty:
+                                    self.Debug(f"CCI dataframe is empty after dropping NaN for {symbol}")
+                                    lr_prediction = 0
+                                else:
+                                    # 检查是否还有NaN值
+                                    has_nan = current_cci_df.isnull().values.any()
+                                    if has_nan:
+                                        self.Debug(f"CCI still contains NaN for {symbol} after dropna, filling with column means")
+                                        # 用列均值填充NaN
+                                        for col in current_cci_df.columns:
+                                            col_mean = current_cci_df[col].mean()
+                                            if np.isnan(col_mean):  # 如果均值也是NaN
+                                                col_mean = 0  # 使用CCI的中间值
+                                            current_cci_df[col] = current_cci_df[col].fillna(col_mean)
+                                    
+                                    # 最后的检查，确保绝对没有NaN
+                                    if current_cci_df.isnull().values.any():
+                                        self.Debug(f"CCI STILL contains NaN for {symbol} after all fixes. Using only LSTM prediction.")
+                                        lr_prediction = 0
+                                    else:
+                                        # 尝试PCA转换
+                                        try:
+                                            if len(current_cci_df) > 0:  # 再次检查有数据
+                                                # 确保当前df和训练df列名一致
+                                                expected_cols = [f'CCI_{p}' for p in self.cci_periods]
+                                                missing_cols = [col for col in expected_cols if col not in current_cci_df.columns]
+                                                
+                                                if missing_cols:
+                                                    self.Debug(f"Missing columns in CCI dataframe: {missing_cols}. Using only LSTM prediction.")
+                                                    lr_prediction = 0
+                                                else:
+                                                    # 确保列顺序正确
+                                                    current_cci_df = current_cci_df[expected_cols]
+                                                    
+                                                    # 进行PCA转换
+                                                    current_pca_features = self.pca.transform(current_cci_df)
+                                                    # 尝试线性回归预测
+                                                    lr_prediction = self.regression_model.predict(current_pca_features)[0]
+                                                    self.Debug(f"线性回归成功预测{symbol}的CCI信号: {lr_prediction:.4f}")
+                                            else:
+                                                self.Debug(f"Empty CCI dataframe after all processing for {symbol}")
+                                                lr_prediction = 0
+                                        except Exception as e:
+                                            self.Debug(f"Error in PCA transform or prediction: {e}. Using only LSTM prediction.")
+                                            lr_prediction = 0
+                    except Exception as e:
+                        self.Debug(f"Error in Linear Regression prediction: {e}. Using only LSTM prediction.")
+                        lr_prediction = 0
+                    
+                    # 综合两个模型的预测
+                    if lr_prediction != 0:
+                        combined_signal = 0.5 * prediction + 0.5 * lr_prediction  # 增加线性回归权重
+                    else:
+                        combined_signal = prediction
+                    
+                    # 更新连续负信号计数
+                    self.UpdateConsecutiveNegativeSignals(symbol, combined_signal)
+                    
+                    # 计算动态清仓阈值 - 基于连续负信号调整
+                    if symbol in self.consecutive_negative_signals:
+                        consecutive_count = self.consecutive_negative_signals[symbol]
+                        # 连续负信号越多，清仓阈值越高，但采用更加平缓的调整曲线
+                        liquidation_threshold = min(self.liquidation_base_threshold * (1 + 0.3 * consecutive_count), -0.0008)
+                    else:
+                        liquidation_threshold = self.liquidation_base_threshold
+                        
+                    # 设置建仓阈值
+                    position_threshold = -0.001    # 信号需高于此阈值才会建仓
+                        
+                    if combined_signal > position_threshold:
+                        allocation = self.AdjustPositionSize(combined_signal)
+                        trade_targets[symbol] = allocation
+                        total_target_allocation += allocation
+                        self.Debug(f"Combined signal for {symbol}: {combined_signal:.4f} (LSTM: {prediction:.4f}, LR: {lr_prediction:.4f})")
+                    else:
+                        if symbol in existing_holdings and combined_signal < liquidation_threshold:
+                            # 记录清仓前的信息
+                            current_holding = self.Portfolio[symbol].Quantity
+                            current_price = self.Securities[symbol].Price
+                            trade_amount = current_holding * current_price
+                            
+                            # 执行清仓
+                            self.Liquidate(symbol)
+                            
+                            # 记录清仓交易
+                            self.Debug(f"交易记录 - {symbol}: 清仓 {current_holding} 股，价格: ${current_price:.2f}，金额: ${trade_amount:.2f}，原因: 信号({combined_signal:.4f})低于动态阈值({liquidation_threshold:.4f})")
+                            self.LogTrade(symbol, "清仓", current_price, current_holding, trade_amount, combined_signal, 0)
+                            
+                            self.Debug(f"清仓 {symbol} 因信号过低，综合信号: {combined_signal:.4f}, 动态阈值: {liquidation_threshold:.4f}")
+                except Exception as e:
+                    self.Debug(f"Unexpected error for {symbol}: {e}")
+
+        # 计算所有目标持仓（包括现有持仓和新增持仓）
+        all_targets = {}
+        total_allocation = 0
+        
+        # 添加新的交易目标
+        for symbol, allocation in trade_targets.items():
+            all_targets[symbol] = allocation
+            total_allocation += allocation
+
+        # 根据VIX风险调整总仓位
+        if total_allocation > max_total_position:
+            scale_factor = max_total_position / total_allocation
+            for symbol, allocation in all_targets.items():
+                adjusted_allocation = allocation * scale_factor
+                # 记录交易前的持仓
+                current_holding = self.Portfolio[symbol].Quantity if symbol in self.Portfolio else 0
+                current_price = self.Securities[symbol].Price
+                
+                # 执行交易
+                self.SetHoldings(symbol, adjusted_allocation)
+                
+                # 记录交易后的持仓变化
+                new_holding = self.Portfolio[symbol].Quantity
+                shares_diff = new_holding - current_holding
+                trade_amount = abs(shares_diff * current_price)
+                trade_type = "买入" if shares_diff > 0 else "卖出"
+                
+                if shares_diff != 0:  # 只记录实际发生的交易
+                    self.Debug(f"交易记录 - {symbol}: {trade_type} {abs(shares_diff)} 股，价格: ${current_price:.2f}，金额: ${trade_amount:.2f}，目标仓位: {adjusted_allocation:.2%}")
+                    # 添加到交易日志
+                    self.LogTrade(symbol, trade_type, current_price, abs(shares_diff), trade_amount, combined_signal, adjusted_allocation)
+                
+                self.Debug(f"动态调整 {symbol} 的持仓比例为: {adjusted_allocation:.2%}（原目标: {allocation:.2%}，基于VIX风险评分调整）")
+        else:
+            # 如果总配置在限制范围内，直接执行交易
+            for symbol, allocation in all_targets.items():
+                # 记录交易前的持仓
+                current_holding = self.Portfolio[symbol].Quantity if symbol in self.Portfolio else 0
+                current_price = self.Securities[symbol].Price
+                
+                # 执行交易
+                self.SetHoldings(symbol, allocation)
+                
+                # 记录交易后的持仓变化
+                new_holding = self.Portfolio[symbol].Quantity
+                shares_diff = new_holding - current_holding
+                trade_amount = abs(shares_diff * current_price)
+                trade_type = "买入" if shares_diff > 0 else "卖出"
+                
+                if shares_diff != 0:  # 只记录实际发生的交易
+                    self.Debug(f"交易记录 - {symbol}: {trade_type} {abs(shares_diff)} 股，价格: ${current_price:.2f}，金额: ${trade_amount:.2f}，目标仓位: {allocation:.2%}")
+                    # 添加到交易日志
+                    self.LogTrade(symbol, trade_type, current_price, abs(shares_diff), trade_amount, combined_signal, allocation)
+                
+                self.Debug(f"动态调整 {symbol} 的持仓比例为: {allocation:.2%}")
+
+        # 输出当前总持仓信息
+        new_total_holdings = sum([x.Quantity * x.Price / self.Portfolio.TotalPortfolioValue for x in self.Portfolio.Values])
+        self.Debug(f"当前总持仓比例: {new_total_holdings:.2%}, 风险调整后最大允许仓位: {max_total_position:.2%}")
+        
+        # 记录当日投资组合持仓汇总
+        self.LogPortfolioSummary()
+
+    def GetFeatures(self, symbol):
+        history = self.History(symbol, self.lookback + 1, Resolution.Daily)
+        if history.empty or 'close' not in history.columns:
+            self.Debug(f"Historical data for {symbol} is unavailable or missing 'close' column.")
+            return
+        features = self.GetFeaturesFromHistory(history)
+
+        if features is None or len(features) == 0:
+            self.Debug(f"Features for {symbol} are not ready or empty.")
+            return None
+
+        return features
+
+
+    def GetFeaturesFromHistory(self, history):
+        if len(history) < self.lookback + 1 or history.empty:  # 确保历史数据足够
+            self.Debug(f"Insufficient or empty history data for features extraction.")
+            return None
+
+        try:
+            closes = history['close'].values
+            opens = history['open'].values
+
+            features = []
+            for i in range(1, self.lookback + 1):
+                price_change = (closes[-i] - closes[-i - 1]) / closes[-i - 1]
+                overnight_gap = opens[-i] / closes[-i - 1] - 1
+                features.append([price_change, overnight_gap])
+
+            return np.array(features)
+        except Exception as e:
+            self.Debug(f"Error in GetFeaturesFromHistory: {e}")
+            return None
+
+    def AdjustPositionSize(self, combined_signal):
+        # 动态头寸分配公式 - 提高基础持仓比例
+        min_position = 0.10  # 提高最低持仓比例至10%(原为7%)
+        max_position = 0.35  # 提高最高持仓比例至35%(原为25%)
+        k = 12  # 进一步降低放大系数，使分配更加均匀(原为15)
+        
+        # 检测当前是否为低风险环境，低风险时提高单股最大仓位
+        current_vix = self.Securities[self.vix_symbol].Price if self.Securities.ContainsKey(self.vix_symbol) else 20
+        is_low_risk = current_vix < self.vix_leverage_threshold
+        
+        if is_low_risk:
+            # 低风险环境下，进一步提高单一股票的最大仓位
+            max_position = 0.40  # 低风险时最高持仓比例提高到40%(原为30%)
+        
+        # 处理信号调整，放宽负信号范围并提高基础分配
+        if combined_signal < 0 and combined_signal > -0.007:  # 扩大负信号范围
+            signal_adjusted = 0.5  # 进一步提高小幅负信号的持仓转换(原为0.4)
+        else:
+            signal_adjusted = min(max(combined_signal, 0), 1)
+            
+        allocation = min_position + ((max_position - min_position) * signal_adjusted * k)
+        return min(allocation, max_position)
+
+
+    def CalculateVolatility(self, symbol):
+        history = self.History(symbol, 30, Resolution.Daily)
+        if history.empty or 'close' not in history.columns:
+            return 1  # 默认权重为1
+        returns = history['close'].pct_change().dropna()
+        volatility = returns.std()
+        return max(1 / volatility, 0.5)  # 波动率较高时降低头寸，设定权重下限
+
+    def IdentifySystemicRisk(self):
+        vix_price = self.Securities[self.vix_symbol].Price  # 使用 self.vix_symbol 进行访问
+        spy_history = self.History(self.spy_symbol, 30, Resolution.Daily)
+
+        if spy_history.empty or 'close' not in spy_history.columns:
+            return False
+
+        spy_return = (spy_history['close'].iloc[-1] - spy_history['close'].iloc[0]) / spy_history['close'].iloc[0]
+        return vix_price > 20 or spy_return < -0.05  # 标准：VIX > 20 或 SPY 下跌超过 5%
+
+    def PredictVixRisk(self):
+        # 获取VIX历史数据
+        history = self.History([self.vix_symbol], self.vix_lookback + 1, Resolution.Daily)
+        if history.empty:
+            return self.max_position  # 如果无法获取数据，返回最大仓位
+        
+        # 准备特征数据
+        vix_data = history['close'].values
+        vix_changes = history['close'].pct_change().dropna().values
+        if len(vix_changes) < self.vix_lookback:
+            return self.max_position
+            
+        # 数据预处理
+        vix_changes = vix_changes.reshape(-1, 1)  # 转为2D数组
+        
+        # 标准化数据
+        if not hasattr(self, 'vix_scaler_fitted'):
+            self.vix_scaler.fit(vix_changes)
+            self.vix_scaler_fitted = True
+        
+        vix_scaled = self.vix_scaler.transform(vix_changes)
+        
+        # 转换为PyTorch张量
+        vix_tensor = torch.FloatTensor(vix_scaled).unsqueeze(0).to(self.device)  # 添加batch维度
+        
+        # 使用PyTorch LSTM模型预测
+        self.vix_model.eval()
+        with torch.no_grad():
+            prediction, attention_weights = self.vix_model(vix_tensor)
+            # 可视化注意力权重
+            attention = attention_weights.squeeze().cpu().numpy()
+            
+        # 获取当前VIX
+        current_vix = vix_data[-1]
+        
+        # 计算风险调整后的仓位
+        max_position = self.CalculateRiskAdjustedPosition(current_vix, prediction.item())
+        
+        self.Debug(f"当前VIX: {current_vix:.2f}, LSTM预测变化: {prediction.item():.4f}, 风险调整后最大仓位: {max_position:.2%}")
+        return max_position
+        
+    def CalculateRiskAdjustedPosition(self, current_vix, vix_prediction):
+        """
+        基于VIX当前值和预测值计算风险调整后的最大仓位
+        返回一个值，表示允许的最大仓位比例，低风险时可超过1.0(使用杠杆)
+        """
+        # 将VIX当前值映射到风险分数（0-1）
+        current_risk = np.clip((current_vix - self.vix_threshold_low) / 
+                             (self.vix_threshold_high - self.vix_threshold_low), 0, 1)
+        
+        # 将VIX预测变化映射到风险分数（0-1）
+        prediction_risk = np.clip(abs(vix_prediction) / 0.2, 0, 1)  # 假设20%的VIX变化预测为最高风险
+        
+        # 综合两个风险分数，给予当前VIX更高的权重
+        combined_risk = 0.7 * current_risk + 0.3 * prediction_risk
+        
+        # 确定是否为低风险环境
+        is_low_risk = current_vix < self.vix_leverage_threshold and combined_risk < 0.4
+        
+        # 根据风险水平使用不同的杠杆率
+        max_allowed_position = self.low_risk_leverage if is_low_risk else self.high_risk_leverage
+        
+        # 计算风险调整后的仓位 (考虑允许的杠杆)
+        position = max_allowed_position - (max_allowed_position - self.min_position) * combined_risk
+        
+        # 记录杠杆使用情况
+        if is_low_risk and position > 1.0:
+            self.Debug(f"低风险环境 (VIX: {current_vix:.2f}), 允许使用杠杆，最大仓位: {position:.2%}")
+        
+        return position
+
+    def LogPortfolioSummary(self):
+        """记录当前投资组合持仓汇总"""
+        self.Debug("======== 当日投资组合持仓汇总 ========")
+        self.Debug(f"日期: {self.Time.date()}")
+        self.Debug(f"总资产: ${self.Portfolio.TotalPortfolioValue:.2f}")
+        self.Debug(f"可用现金: ${self.Portfolio.Cash:.2f}")
+        self.Debug(f"已用保证金: ${self.Portfolio.TotalMarginUsed:.2f}")
+        
+        # 计算杠杆使用情况
+        current_leverage = (self.Portfolio.TotalHoldingsValue) / self.Portfolio.TotalPortfolioValue if self.Portfolio.TotalPortfolioValue > 0 else 0
+        self.Debug(f"当前杠杆率: {current_leverage:.2%}")
+        
+        # 如果有持仓，则输出持仓明细
+        if len(self.Portfolio.Keys) > 0:
+            self.Debug("持仓明细:")
+            for symbol in self.Portfolio.Keys:
+                position = self.Portfolio[symbol]
+                if position.Quantity != 0:  # 只显示非零持仓
+                    market_value = position.Quantity * position.Price
+                    allocation = market_value / self.Portfolio.TotalPortfolioValue
+                    unrealized_pnl = position.UnrealizedProfitPercent
+                    self.Debug(f"  {symbol}: {position.Quantity} 股，现价: ${position.Price:.2f}，市值: ${market_value:.2f}，" +
+                               f"占比: {allocation:.2%}，未实现盈亏: {unrealized_pnl:.2%}")
+        else:
+            self.Debug("当前无持仓")
+        
+        self.Debug("====================================")
+
+    def OnEndOfAlgorithm(self):
+        """算法结束时执行，保存交易日志和计算胜率"""
+        self.SaveTradeLog()
+        self.SaveClosedTradesLog()
+        self.CalculateWinRate()
+        self.Debug("算法执行结束，交易日志和盈亏统计已保存")
+        
+    def SaveTradeLog(self):
+        """保存交易日志到CSV文件"""
+        if not self.trade_log:
+            self.Debug("没有交易记录可供保存")
+            return
+            
+        try:
+            # 将交易日志转换为DataFrame
+            trade_df = pd.DataFrame(self.trade_log, columns=self.trade_log_columns)
+            
+            # 使用QC内置的文件操作API保存CSV
+            csv_content = trade_df.to_csv(index=False)
+            self.ObjectStore.Save("trade_log.csv", csv_content)
+            
+            self.Debug(f"成功保存{len(self.trade_log)}条交易记录到trade_log.csv")
+        except Exception as e:
+            self.Debug(f"保存交易日志时出错: {e}")
+            
+    def SaveClosedTradesLog(self):
+        """保存已平仓交易记录到CSV文件"""
+        if not self.closed_trades:
+            self.Debug("没有已平仓交易记录可供保存")
+            return
+            
+        try:
+            # 将已平仓交易记录转换为DataFrame
+            closed_trades_df = pd.DataFrame(self.closed_trades, columns=self.closed_trades_columns)
+            
+            # 使用QC内置的文件操作API保存CSV
+            csv_content = closed_trades_df.to_csv(index=False)
+            self.ObjectStore.Save("closed_trades_log.csv", csv_content)
+            
+            self.Debug(f"成功保存{len(self.closed_trades)}条已平仓交易记录到closed_trades_log.csv")
+        except Exception as e:
+            self.Debug(f"保存已平仓交易记录时出错: {e}")
+            
+    def CalculateWinRate(self):
+        """计算交易胜率和其他统计数据"""
+        if not self.closed_trades:
+            self.Debug("没有已平仓交易可供计算胜率")
+            return
+            
+        try:
+            # 将已平仓交易转换为DataFrame
+            trades_df = pd.DataFrame(self.closed_trades, columns=self.closed_trades_columns)
+            
+            # 计算胜率
+            total_trades = len(trades_df)
+            winning_trades = len(trades_df[trades_df['盈亏金额'] > 0])
+            losing_trades = len(trades_df[trades_df['盈亏金额'] < 0])
+            win_rate = winning_trades / total_trades if total_trades > 0 else 0
+            
+            # 计算平均盈亏、最大盈利和最大亏损
+            avg_profit = trades_df['盈亏金额'].mean()
+            max_profit = trades_df['盈亏金额'].max()
+            max_loss = trades_df['盈亏金额'].min()
+            
+            # 计算盈亏比 (平均盈利/平均亏损的绝对值)
+            avg_win = trades_df[trades_df['盈亏金额'] > 0]['盈亏金额'].mean() if winning_trades > 0 else 0
+            avg_loss = abs(trades_df[trades_df['盈亏金额'] < 0]['盈亏金额'].mean()) if losing_trades > 0 else 1  # 避免除以零
+            profit_loss_ratio = avg_win / avg_loss if avg_loss > 0 else float('inf')
+            
+            # 计算平均持有天数
+            avg_holding_days = trades_df['持有天数'].mean()
+            
+            # 计算总盈亏
+            total_profit = trades_df['盈亏金额'].sum()
+            
+            # 计算每个股票的胜率
+            stock_stats = {}
+            for symbol in trades_df['股票'].unique():
+                stock_trades = trades_df[trades_df['股票'] == symbol]
+                stock_total = len(stock_trades)
+                stock_wins = len(stock_trades[stock_trades['盈亏金额'] > 0])
+                stock_win_rate = stock_wins / stock_total if stock_total > 0 else 0
+                stock_profit = stock_trades['盈亏金额'].sum()
+                stock_stats[symbol] = {
+                    '交易次数': stock_total,
+                    '胜率': stock_win_rate,
+                    '总盈亏': stock_profit
+                }
+            
+            # 输出统计结果
+            self.Debug("======== 交易统计 ========")
+            self.Debug(f"总交易次数: {total_trades}")
+            self.Debug(f"盈利交易: {winning_trades}, 亏损交易: {losing_trades}")
+            self.Debug(f"总体胜率: {win_rate:.2%}")
+            self.Debug(f"总盈亏: ${total_profit:.2f}")
+            self.Debug(f"平均盈亏: ${avg_profit:.2f}")
+            self.Debug(f"最大盈利: ${max_profit:.2f}, 最大亏损: ${max_loss:.2f}")
+            self.Debug(f"盈亏比: {profit_loss_ratio:.2f}")
+            self.Debug(f"平均持有天数: {avg_holding_days:.1f}")
+            
+            self.Debug("\n各股票统计:")
+            for symbol, stats in stock_stats.items():
+                self.Debug(f"  {symbol}: 交易次数 {stats['交易次数']}, 胜率 {stats['胜率']:.2%}, 总盈亏 ${stats['总盈亏']:.2f}")
+            
+            # 保存统计结果到文件
+            stats_content = (
+                "======== 交易统计 ========\n"
+                f"总交易次数: {total_trades}\n"
+                f"盈利交易: {winning_trades}, 亏损交易: {losing_trades}\n"
+                f"总体胜率: {win_rate:.2%}\n"
+                f"总盈亏: ${total_profit:.2f}\n"
+                f"平均盈亏: ${avg_profit:.2f}\n"
+                f"最大盈利: ${max_profit:.2f}, 最大亏损: ${max_loss:.2f}\n"
+                f"盈亏比: {profit_loss_ratio:.2f}\n"
+                f"平均持有天数: {avg_holding_days:.1f}\n\n"
+                "各股票统计:\n"
+            )
+            
+            for symbol, stats in stock_stats.items():
+                stats_content += f"  {symbol}: 交易次数 {stats['交易次数']}, 胜率 {stats['胜率']:.2%}, 总盈亏 ${stats['总盈亏']:.2f}\n"
+                
+            self.ObjectStore.Save("trading_statistics.txt", stats_content)
+            self.Debug("交易统计已保存到trading_statistics.txt")
+            
+        except Exception as e:
+            self.Debug(f"计算胜率时出错: {e}")
+
+    def LogTrade(self, symbol, trade_type, price, quantity, amount, signal=0, target_allocation=0):
+        """记录交易到交易日志"""
+        trade_record = [
+            self.Time.strftime("%Y-%m-%d"),  # 日期
+            str(symbol),                     # 股票代码
+            trade_type,                      # 交易类型
+            float(price),                    # 价格
+            float(quantity),                 # 数量
+            float(amount),                   # 金额
+            float(signal),                   # 信号值
+            float(target_allocation)         # 目标仓位
+        ]
+        self.trade_log.append(trade_record)
+        
+        # 更新持仓记录和盈亏情况
+        self.UpdatePositionRecords(symbol, trade_type, price, quantity)
+        
+    def UpdatePositionRecords(self, symbol, trade_type, price, quantity):
+        """更新持仓记录和计算已平仓交易的盈亏"""
+        symbol_str = str(symbol)
+        
+        if trade_type == "买入":
+            # 新建或更新持仓记录
+            if symbol_str not in self.positions_entry:
+                # 新建持仓
+                self.positions_entry[symbol_str] = {
+                    'price': price, 
+                    'quantity': quantity, 
+                    'date': self.Time.date()
+                }
+            else:
+                # 更新现有持仓 (加仓情况 - 计算平均成本)
+                current = self.positions_entry[symbol_str]
+                total_quantity = current['quantity'] + quantity
+                total_cost = (current['price'] * current['quantity']) + (price * quantity)
+                
+                if total_quantity > 0:  # 避免除以零
+                    avg_price = total_cost / total_quantity
+                    self.positions_entry[symbol_str] = {
+                        'price': avg_price,
+                        'quantity': total_quantity,
+                        'date': current['date']  # 保留原始进入日期
+                    }
+        
+        elif trade_type == "卖出" or trade_type == "清仓":
+            # 平仓或减仓，计算盈亏
+            if symbol_str in self.positions_entry:
+                entry = self.positions_entry[symbol_str]
+                entry_price = entry['price']
+                entry_date = entry['date']
+                
+                # 计算持有天数
+                holding_days = (self.Time.date() - entry_date).days
+                
+                # 计算盈亏
+                profit_amount = (price - entry_price) * quantity
+                profit_percent = (price / entry_price - 1)  # 保持为小数，方便后续格式化
+                
+                # 记录平仓交易
+                closed_trade = [
+                    symbol_str,                   # 股票
+                    entry_date.strftime("%Y-%m-%d"),  # 进入日期
+                    self.Time.strftime("%Y-%m-%d"),   # 退出日期
+                    holding_days,                 # 持有天数
+                    float(entry_price),           # 进入价格
+                    float(price),                 # 退出价格
+                    float(quantity),              # 数量
+                    float(profit_amount),         # 盈亏金额
+                    float(profit_percent),        # 盈亏百分比
+                    trade_type                    # 交易类型
+                ]
+                self.closed_trades.append(closed_trade)
+                
+                # 更新持仓记录
+                remaining_quantity = entry['quantity'] - quantity
+                if remaining_quantity <= 0 or trade_type == "清仓":
+                    # 如果已全部平仓或清仓，删除持仓记录
+                    del self.positions_entry[symbol_str]
+                else:
+                    # 减仓，更新剩余数量
+                    self.positions_entry[symbol_str]['quantity'] = remaining_quantity
+                
+                # 记录到日志
+                self.Debug(f"交易盈亏 - {symbol}: {trade_type} {quantity} 股，" +
+                           f"进入价格: ${entry_price:.2f}，退出价格: ${price:.2f}，" +
+                           f"盈亏: ${profit_amount:.2f} ({profit_percent:.2%})，持有天数: {holding_days}")
+
+    def CalculateStockVolatility(self, symbol):
+        """计算股票的波动率"""
+        try:
+            history = self.History(symbol, self.stop_loss_params['vol_lookback'], Resolution.Daily)
+            if history.empty or 'close' not in history.columns:
+                return 0.02  # 如果无法获取历史数据，返回默认值2%
+            
+            # 计算日收益率
+            daily_returns = history['close'].pct_change().dropna()
+            
+            # 计算波动率(年化)
+            volatility = daily_returns.std() * np.sqrt(252)
+            
+            # 确保波动率在合理范围内
+            volatility = max(min(volatility, 0.5), 0.01)  # 限制在1%到50%之间
+            
+            self.Debug(f"{symbol}的{self.stop_loss_params['vol_lookback']}日波动率: {volatility:.2%}")
+            return volatility
+            
+        except Exception as e:
+            self.Debug(f"计算{symbol}波动率时出错: {e}")
+            return 0.02  # 返回默认值
+    
+    def CalculateDynamicStopLoss(self, symbol):
+        """计算基于波动率的动态止损比例"""
+        vol = self.CalculateStockVolatility(symbol)
+        
+        # 基于波动率调整止损比例：波动率越高，止损越宽松
+        dynamic_stop_loss = self.stop_loss_params['base_stop_loss'] + vol * self.stop_loss_params['volatility_multiplier']
+        
+        # 限制在合理范围内
+        dynamic_stop_loss = max(min(dynamic_stop_loss, 0.35), 0.10)  # 限制在10%到35%之间(原为8%-30%)
+        
+        self.Debug(f"{symbol}的动态止损比例: {dynamic_stop_loss:.2%}")
+        return dynamic_stop_loss
+    
+    def CheckTrailingStop(self, symbol):
+        """检查是否触发跟踪止损"""
+        if symbol not in self.Portfolio or self.Portfolio[symbol].Quantity <= 0:
+            return False
+            
+        current_price = self.Securities[symbol].Price
+        position = self.Portfolio[symbol]
+        
+        # 初始化高点价格记录
+        if symbol not in self.stock_high_prices:
+            self.stock_high_prices[symbol] = current_price
+            return False
+            
+        # 更新历史最高价格
+        if current_price > self.stock_high_prices[symbol]:
+            self.stock_high_prices[symbol] = current_price
+            return False
+            
+        # 计算从高点的回撤百分比
+        drawdown_from_high = (self.stock_high_prices[symbol] - current_price) / self.stock_high_prices[symbol]
+        
+        # 如果回撤超过跟踪止损比例，触发止损
+        if drawdown_from_high >= self.stop_loss_params['trailing_stop_pct']:
+            self.Debug(f"{symbol}触发跟踪止损: 当前价格${current_price:.2f}, 历史高点${self.stock_high_prices[symbol]:.2f}, 回撤{drawdown_from_high:.2%}")
+            return True
+            
+        return False
+    
+    def CheckDynamicStopLoss(self, symbol):
+        """检查是否触发动态止损"""
+        if symbol not in self.Portfolio or self.Portfolio[symbol].Quantity <= 0:
+            return False
+            
+        position = self.Portfolio[symbol]
+        unrealized_profit_pct = position.UnrealizedProfitPercent
+        
+        # 若处于亏损状态，计算是否超过动态止损阈值
+        if unrealized_profit_pct < 0:
+            stop_loss_threshold = self.CalculateDynamicStopLoss(symbol)
+            
+            if abs(unrealized_profit_pct) >= stop_loss_threshold:
+                self.Debug(f"{symbol}触发动态止损: 当前亏损{unrealized_profit_pct:.2%}, 止损阈值{stop_loss_threshold:.2%}")
+                return True
+                
+        return False
+        
+    def UpdateConsecutiveNegativeSignals(self, symbol, signal):
+        """更新连续负信号计数，增加衰减机制，避免计数无限累积"""
+        # 降低负信号计数的门槛，只有显著的负信号才计入
+        significant_negative_threshold = -0.002  # 负信号需要小于此值才计数
+        
+        if signal <= significant_negative_threshold:
+            # 如果是明显的负信号，增加计数
+            if symbol in self.consecutive_negative_signals:
+                self.consecutive_negative_signals[symbol] += 1
+            else:
+                self.consecutive_negative_signals[symbol] = 1
+        elif signal > 0:
+            # 如果是正信号，重置计数
+            self.consecutive_negative_signals[symbol] = 0
+        else:
+            # 如果是轻微的负信号(-0.002到0之间)，保持计数不变或轻微衰减
+            if symbol in self.consecutive_negative_signals and self.consecutive_negative_signals[symbol] > 0:
+                # 每次轻微衰减计数，避免永久累积
+                self.consecutive_negative_signals[symbol] = max(0, self.consecutive_negative_signals[symbol] - 0.25)
+            
+        # 设置上限，避免计数过高导致清仓阈值过严格
+        if symbol in self.consecutive_negative_signals:
+            self.consecutive_negative_signals[symbol] = min(self.consecutive_negative_signals[symbol], self.max_consecutive_negative)
+            
+        # 记录连续负信号达到警戒值的股票
+        if symbol in self.consecutive_negative_signals and self.consecutive_negative_signals[symbol] >= self.max_consecutive_negative:
+            self.Debug(f"{symbol}出现连续{self.consecutive_negative_signals[symbol]}次负信号, 达到警戒值")
+            
+    def MonitorPortfolioDrawdown(self):
+        """监控投资组合总体回撤，实施风险控制，考虑杠杆使用"""
+        current_value = self.Portfolio.TotalPortfolioValue
+        
+        # 计算当前杠杆率
+        current_leverage = (self.Portfolio.TotalHoldingsValue) / self.Portfolio.TotalPortfolioValue if self.Portfolio.TotalPortfolioValue > 0 else 0
+        
+        # 如果使用了杠杆，对回撤限制更加敏感
+        adjusted_drawdown_limit = self.portfolio_max_drawdown
+        if current_leverage > 1.05:  # 如果使用了超过5%的杠杆
+            # 杠杆越高，允许的回撤越低
+            leverage_factor = (current_leverage - 1.0) * 2  # 例如：10%杠杆会使回撤限制降低20%
+            adjusted_drawdown_limit = self.portfolio_max_drawdown * (1 - leverage_factor)
+            adjusted_drawdown_limit = max(adjusted_drawdown_limit, 0.12)  # 保证至少12%的回撤限制
+        
+        # 更新历史最高价值
+        if current_value > self.peak_portfolio_value:
+            self.peak_portfolio_value = current_value
+            # 如果在风险模式下，检查是否可以退出
+            if self.risk_reduction_mode:
+                # 计算从低点恢复的比例
+                recovery = (current_value - self.lowest_portfolio_value) / self.lowest_portfolio_value
+                if recovery >= self.risk_recovery_threshold:
+                    self.risk_reduction_mode = False
+                    self.Debug(f"投资组合已从低点恢复 {recovery:.2%}，退出风险控制模式")
+            return False
+            
+        # 如果没有设置过峰值，先设置
+        if self.peak_portfolio_value == 0:
+            self.peak_portfolio_value = current_value
+            return False
+            
+        # 计算当前回撤比例
+        current_drawdown = (self.peak_portfolio_value - current_value) / self.peak_portfolio_value
+        
+        # 记录回撤信息
+        if current_drawdown > 0.05:  # 只记录超过5%的回撤
+            self.Debug(f"当前投资组合回撤: {current_drawdown:.2%}, 杠杆率: {current_leverage:.2%}, 调整后回撤限制: {adjusted_drawdown_limit:.2%}")
+        
+        # 检查是否超过调整后的最大允许回撤
+        if current_drawdown >= adjusted_drawdown_limit and not self.risk_reduction_mode:
+            self.risk_reduction_mode = True
+            self.lowest_portfolio_value = current_value
+            self.Debug(f"⚠️ 警告: 投资组合回撤达到 {current_drawdown:.2%}，当前杠杆 {current_leverage:.2%}，启动风险控制模式!")
+            return True
+            
+        # 如果已经在风险模式，记录新的低点
+        if self.risk_reduction_mode and current_value < self.lowest_portfolio_value:
+            self.lowest_portfolio_value = current_value
+            self.Debug(f"投资组合创新低: ${current_value:.2f}, 总回撤: {current_drawdown:.2%}")
+            
+        return self.risk_reduction_mode
+        
+    def ReduceRiskExposure(self):
+        """在高风险模式下减少风险敞口"""
+        # 计算目标仓位，风险模式下减少持仓但不过度限制
+        target_position = 0.6  # 风险模式下最大仓位提高至60%(原为40%)
+        
+        # 获取当前总体持仓比例
+        current_position = sum([x.Quantity * x.Price / self.Portfolio.TotalPortfolioValue for x in self.Portfolio.Values])
+        
+        # 如果当前持仓高于目标，减仓到目标水平
+        if current_position > target_position:
+            reduction_factor = target_position / current_position
+            self.Debug(f"风险控制模式: 将总体仓位从 {current_position:.2%} 降至 {target_position:.2%}")
+            
+            # 对每个持仓的股票同比例减仓
+            for symbol in self.Portfolio.Keys:
+                if self.Portfolio[symbol].Quantity > 0:
+                    current_holding = self.Portfolio[symbol].HoldStock
+                    if current_holding:
+                        current_weight = self.Portfolio[symbol].Quantity * self.Portfolio[symbol].Price / self.Portfolio.TotalPortfolioValue
+                        new_weight = current_weight * reduction_factor
+                        
+                        # 设置新的目标持仓比例
+                        self.SetHoldings(symbol, new_weight)
+                        
+                        # 记录交易
+                        current_price = self.Securities[symbol].Price
+                        old_shares = self.Portfolio[symbol].Quantity
+                        new_shares = int(old_shares * reduction_factor)  # 减仓后的预计股数
+                        shares_diff = old_shares - new_shares
+                        trade_amount = shares_diff * current_price
+                        
+                        self.Debug(f"风险控制减仓: {symbol} 从 {current_weight:.2%} 降至 {new_weight:.2%}, 卖出约 {shares_diff} 股")
+                        self.LogTrade(symbol, "风险减仓", current_price, shares_diff, trade_amount, 0, new_weight)
+            
+            return True
+        return False

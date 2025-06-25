@@ -195,9 +195,24 @@ class PortfolioOptimizer:
             self.algorithm.log_debug(f"  Final weights sum: {np.sum(final_weights) if final_weights is not None and len(final_weights) > 0 else 'N/A'}", log_type="portfolio")
             
             self.algorithm.log_debug(f"[优化器] 收到预期收益: {expected_returns}", log_type="portfolio")
-            self.algorithm.log_debug(f"[优化器] 收到协方差矩阵: {covariance_matrix}", log_type="portfolio")
+            self.algorithm.log_debug(f"[优化器] 收到协方差矩阵形状: {covariance_matrix.shape}", log_type="portfolio")
             self.algorithm.log_debug(f"[优化器] 收到可用股票列表: {symbols}", log_type="portfolio")
             self.algorithm.log_debug(f"[优化器] 输出目标权重: {final_weights}", log_type="portfolio")
+            
+            # 详细显示权重分配
+            if final_weights is not None and len(final_weights) == len(final_symbols):
+                self.algorithm.log_debug("=== 最终权重分配 ===", log_type="portfolio")
+                for i, symbol in enumerate(final_symbols):
+                    weight = final_weights[i]
+                    self.algorithm.log_debug(f"  {symbol}: {weight:.4f} ({weight*100:.2f}%)", log_type="portfolio")
+                
+                # 检查是否趋向等权重
+                equal_weight = 1.0 / len(final_symbols)
+                max_deviation = max(abs(w - equal_weight) for w in final_weights)
+                self.algorithm.log_debug(f"权重分布分析: 等权重={equal_weight:.4f}, 最大偏差={max_deviation:.4f}", log_type="portfolio")
+                
+                if max_deviation < 0.02:  # 如果所有权重与等权重的偏差都小于2%
+                    self.algorithm.log_debug("⚠️ 检测到接近等权重分配，可能存在优化问题", log_type="portfolio")
             
             # 修复NumPy数组布尔值判断问题
             weights_empty = (final_weights is None or 
@@ -330,6 +345,9 @@ class PortfolioOptimizer:
             # 如果不需要应用防御策略，仍然要进行常规筛选
             if not should_apply_defense:
                 self.algorithm.log_debug("市场状况良好，使用常规策略但仍会动态调整现金比例", log_type="portfolio")
+                # 记录预期收益分布以诊断优化问题
+                self.algorithm.log_debug(f"预期收益分布: 最高={np.max(expected_returns):.4f}, 最低={np.min(expected_returns):.4f}, 标准差={np.std(expected_returns):.4f}", log_type="portfolio")
+                self.algorithm.log_debug(f"前5只股票预期收益: {[(symbols[i], expected_returns[i]) for i in np.argsort(expected_returns)[-5:]]}", log_type="portfolio")
                 # 保存平均预期收益，用于动态现金管理
                 self.algorithm._last_avg_expected_return = avg_expected_return
                 self.algorithm._market_volatility = volatility_estimate
@@ -851,13 +869,18 @@ class PortfolioOptimizer:
             if hasattr(self.algorithm, 'drawdown_monitor'):
                 current_drawdown = abs(self.algorithm.drawdown_monitor.get_current_drawdown())
             
-            # 获取VIX水平
-            vix_level = 20
+            # 获取VIX水平 - 不使用默认值，确保从真实数据获取
+            vix_level = None
             if hasattr(self.algorithm, 'vix_monitor'):
-                # 修正属性名，使用_last_vix_value而不是_current_vix
-                vix_level = getattr(self.algorithm.vix_monitor, '_last_vix_value', 20)
-                if vix_level is None or vix_level <= 0:
-                    vix_level = 20
+                vix_level = getattr(self.algorithm.vix_monitor, '_last_vix_value', None)
+                if vix_level is not None and vix_level > 0:
+                    self.algorithm.log_debug(f"从VIX监控器获取到VIX数据: {vix_level:.2f}", log_type="risk")
+                else:
+                    self.algorithm.log_debug("VIX监控器无有效数据，使用默认值20.0", log_type="risk")
+                    vix_level = 20.0
+            else:
+                self.algorithm.log_debug("无VIX监控器，使用默认值20.0", log_type="risk")
+                vix_level = 20.0
             
             # 根据Alert Black Bat分析结论判断市场状况
             if current_drawdown >= 0.10 or vix_level >= 30:

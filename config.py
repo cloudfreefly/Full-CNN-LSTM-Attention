@@ -155,7 +155,7 @@ class AlgorithmConfig:
         'min_portfolio_size': 10,      # 最小10只股票（从8只）
         'diversification_preference': 0.9,  # 90%多元化偏好（从80%）
         'allow_cash_when_all_negative': True,  # 允许在全负收益时持有现金
-        'force_equal_weights': False,  # 强制等权重模式
+        'force_equal_weights': False,  # 强制等权重模式 - 已禁用以启用基于预期收益的优化
         'equal_weight_fallback': False, # 启用等权重备用策略
         'disable_optimization': False, # 禁用复杂优化，直接等权重
         'severe_loss_threshold': -0.12,  # 严重损失阈值收紧至-12%（从-15%）
@@ -198,7 +198,7 @@ class AlgorithmConfig:
         
         # === VIX相关开关 ===
         'enable_vix_monitoring': True,           # VIX监控
-        'enable_vix_defensive_filter': False,    # VIX防御性筛选
+        'enable_vix_defensive_filter': True,    # VIX防御性筛选
         'enable_vix_panic_score': True,         # VIX恐慌评分
         'enable_vix_risk_adjustment': True,     # VIX风险调整
         'enable_vix_recovery_tracking': True,   # VIX恢复跟踪
@@ -346,10 +346,11 @@ class AlgorithmConfig:
         # === 训练时间分离配置 ===
         'training_time_separation': {
             'enable_pretrain': True,           # 重新启用历史数据预训练
-            'pretrain_history_months': 24,    # 预训练使用2年历史数据（从6个月）
-            'pretrain_on_startup': False,     # 禁用启动时预训练，改为非交易时间进行
-            'pretrain_strict_mode': True,     # 启用严格模式：提高数据要求
+            'pretrain_history_months': 36,    # 预训练使用3年历史数据（增加数据充分性）
+            'pretrain_on_startup': True,      # 启用启动时预训练，确保有可用模型
+            'pretrain_strict_mode': False,    # 放松严格模式以提高成功率
             'pretrain_model_cache': True,     # 启用缓存以提高效率
+            'non_trading_full_retrain': True, # 启用非工作时间全量重训练
             'pretrain_cache_file': 'pretrained_models',  # ObjectStore键名（不需要.pkl扩展名）
             
             'enable_weekend_training': True,   # 启用周末深度训练
@@ -457,7 +458,7 @@ class AlgorithmConfig:
     
     # 预测配置
     PREDICTION_CONFIG = {
-        'confidence_threshold': 0.75,  # 置信度阈值 (提升胜率：从0.6提升至0.75)
+        'confidence_threshold': 0.5,  # 置信度阈值 (从0.75降至0.5以减少过度过滤)
         'trend_consistency_weight': 0.4, # 趋势一致性权重 (提升胜率：从0.3提升至0.4)
         'uncertainty_penalty': 0.3,   # 不确定性惩罚 (提升胜率：从0.2提升至0.3)
         'volatility_adjustment': True, # 是否进行波动率调整

@@ -60,19 +60,45 @@ class LeverageManager:
             # 根据风险水平确定杠杆比例
             target_leverage = self._get_leverage_by_risk_level(risk_level)
             
-            # 平滑调整，避免频繁变动
-            smooth_factor = leverage_config.get('leverage_smooth_factor', 0.3)
-            min_change = leverage_config.get('min_leverage_change', 0.05)
+            # === 极端风险快速降杠杆机制 ===
+            is_extreme_situation = (
+                risk_level == 'extreme' or 
+                vix_level >= 22 or 
+                drawdown_level >= 0.08 or
+                volatility_level >= 0.30
+            )
             
-            if self._current_leverage_ratio > 0:
-                leverage_change = target_leverage - self._current_leverage_ratio
-                if abs(leverage_change) > min_change:
-                    # 应用平滑因子
-                    adjusted_leverage = self._current_leverage_ratio + leverage_change * smooth_factor
-                    target_leverage = adjusted_leverage
-                else:
-                    # 变化太小，保持当前杠杆
-                    target_leverage = self._current_leverage_ratio
+            if is_extreme_situation:
+                # 极端情况下直接使用目标杠杆，不平滑
+                self.algorithm.log_debug(f"极端风险状况，立即调整杠杆: {self._current_leverage_ratio:.2f} -> {target_leverage:.2f}", 
+                                       log_type="risk")
+            else:
+                # 平滑调整，避免频繁变动
+                smooth_factor = leverage_config.get('leverage_smooth_factor', 0.6)  # 从0.3提高到0.6
+                min_change = leverage_config.get('min_leverage_change', 0.03)  # 从0.05降低到0.03
+                
+                if self._current_leverage_ratio > 0:
+                    leverage_change = target_leverage - self._current_leverage_ratio
+                    if abs(leverage_change) > min_change:
+                        # 根据风险等级动态调整平滑因子
+                        if risk_level in ['high', 'extreme']:
+                            # 高风险时快速响应
+                            dynamic_smooth_factor = min(0.8, smooth_factor * 1.5)
+                        elif abs(leverage_change) > 0.15:
+                            # 大幅度变化时提高响应速度
+                            dynamic_smooth_factor = min(0.8, smooth_factor * 1.3)
+                        else:
+                            dynamic_smooth_factor = smooth_factor
+                        
+                        # 应用动态平滑因子
+                        adjusted_leverage = self._current_leverage_ratio + leverage_change * dynamic_smooth_factor
+                        target_leverage = adjusted_leverage
+                        self.algorithm.log_debug(f"平滑调整杠杆: {self._current_leverage_ratio:.2f} -> {target_leverage:.2f} (因子:{dynamic_smooth_factor:.1f})", 
+                                               log_type="risk")
+                    else:
+                        # 变化太小，保持当前杠杆
+                        target_leverage = self._current_leverage_ratio
+                        self.algorithm.log_debug(f"杠杆变化过小，保持当前值: {target_leverage:.2f}", log_type="risk")
             
             # 确保在合理范围内
             max_leverage = leverage_config.get('max_leverage_ratio', 1.5)
@@ -81,7 +107,7 @@ class LeverageManager:
             self._target_leverage_ratio = target_leverage
             self._risk_level = risk_level
             
-            self.algorithm.log_debug(f"杠杆计算: 风险等级={risk_level}, 目标杠杆={target_leverage:.2f}x", 
+            self.algorithm.log_debug(f"杠杆计算完成: 风险等级={risk_level}, 目标杠杆={target_leverage:.2f}x, 极端状况={is_extreme_situation}", 
                                     log_type="risk")
             
             return target_leverage
@@ -112,20 +138,58 @@ class LeverageManager:
     def _get_volatility_level(self):
         """获取波动率水平"""
         try:
-            # 从风险管理器获取当前波动率
-            if hasattr(self.algorithm, 'risk_manager'):
-                return getattr(self.algorithm.risk_manager, '_current_volatility', 0.15)
+            # 从风险管理器的波动率监控器获取实际波动率
+            if hasattr(self.algorithm, 'risk_manager') and hasattr(self.algorithm.risk_manager, 'volatility_monitor'):
+                volatility_monitor = self.algorithm.risk_manager.volatility_monitor
+                
+                # 首先尝试计算当前波动率
+                if hasattr(self.algorithm, 'previous_portfolio_value'):
+                    current_value = self.algorithm.Portfolio.TotalPortfolioValue
+                    daily_return = (current_value - self.algorithm.previous_portfolio_value) / self.algorithm.previous_portfolio_value
+                    current_volatility = volatility_monitor.update_return(daily_return)
+                    
+                    if current_volatility > 0:
+                        self.algorithm.log_debug(f"获取到实际波动率: {current_volatility:.3f}", log_type="risk")
+                        return current_volatility
+                
+                # 如果有历史收益率数据，直接计算波动率
+                if len(volatility_monitor.daily_returns) >= 20:
+                    import numpy as np
+                    volatility = np.std(volatility_monitor.daily_returns) * np.sqrt(252)
+                    self.algorithm.log_debug(f"通过历史收益率计算波动率: {volatility:.3f}", log_type="risk")
+                    return volatility
+                
+                self.algorithm.log_debug("波动率监控器中数据不足，使用默认值", log_type="risk")
+            else:
+                self.algorithm.log_debug("风险管理器或波动率监控器不可用，使用默认值", log_type="risk")
+            
             return 0.15  # 默认中等波动率
-        except:
+        except Exception as e:
+            self.algorithm.log_debug(f"获取波动率失败: {e}，使用默认值", log_type="risk")
             return 0.15
     
     def _get_current_drawdown(self):
         """获取当前回撤水平"""
         try:
-            if hasattr(self.algorithm, 'drawdown_monitor'):
-                return abs(getattr(self.algorithm.drawdown_monitor, '_current_drawdown', 0.0))
+            # 从风险管理器的回撤监控器获取实际回撤
+            if hasattr(self.algorithm, 'risk_manager') and hasattr(self.algorithm.risk_manager, 'drawdown_monitor'):
+                drawdown_monitor = self.algorithm.risk_manager.drawdown_monitor
+                
+                # 更新当前投资组合价值并获取回撤
+                current_value = self.algorithm.Portfolio.TotalPortfolioValue
+                current_drawdown = drawdown_monitor.update_portfolio_value(current_value)
+                
+                if current_drawdown is not None:
+                    self.algorithm.log_debug(f"获取到实际回撤: {current_drawdown:.3f}", log_type="risk")
+                    return abs(current_drawdown)
+                
+                self.algorithm.log_debug("回撤监控器返回None，使用默认值", log_type="risk")
+            else:
+                self.algorithm.log_debug("风险管理器或回撤监控器不可用，使用默认值", log_type="risk")
+            
             return 0.0
-        except:
+        except Exception as e:
+            self.algorithm.log_debug(f"获取回撤失败: {e}，使用默认值", log_type="risk")
             return 0.0
     
     def _assess_risk_level(self, vix_level, volatility_level, drawdown_level):
@@ -152,14 +216,14 @@ class LeverageManager:
         else:
             vol_risk = 'extreme'
         
-        # === Alert Black Bat分析：强化回撤风险评估 ===
-        if drawdown_level < 0.03:      # 3%以下为低风险
+        # === Alert Black Bat分析：优化回撤风险评估阈值 ===
+        if drawdown_level < 0.05:      # 5%以下为低风险
             dd_risk = 'low'
-        elif drawdown_level < 0.05:    # 3-5%为中等风险
+        elif drawdown_level < 0.08:    # 5-8%为中等风险
             dd_risk = 'medium'
-        elif drawdown_level < 0.08:    # 5-8%为高风险
+        elif drawdown_level < 0.12:    # 8-12%为高风险
             dd_risk = 'high'
-        else:                          # 8%以上为极端风险
+        else:                          # 12%以上为极端风险
             dd_risk = 'extreme'
         
         # === Alert Black Bat分析：动态杠杆调整逻辑 ===
@@ -255,19 +319,60 @@ class LeverageManager:
     def _should_update_leverage(self, target_leverage):
         """判断是否应该更新杠杆比例"""
         leverage_config = self.config.LEVERAGE_CONFIG
-        update_frequency = leverage_config.get('leverage_adjustment_frequency', 1)
         
-        # 检查更新频率
+        # 获取当前风险状态，检查是否为极端情况
+        vix_level = self._get_vix_level()
+        drawdown_level = self._get_current_drawdown()
+        volatility_level = self._get_volatility_level()
+        
+        is_extreme_situation = (
+            self._risk_level == 'extreme' or 
+            vix_level >= 22 or 
+            drawdown_level >= 0.08 or
+            volatility_level >= 0.30
+        )
+        
+        # 极端情况下强制更新，绕过所有限制
+        if is_extreme_situation:
+            self.algorithm.log_debug(f"极端风险状况，强制更新杠杆: {self._current_leverage_ratio:.2f} -> {target_leverage:.2f}", 
+                                   log_type="risk")
+            return True
+        
+        # 高风险情况下放宽限制
+        if hasattr(self, '_risk_level') and self._risk_level == 'high':
+            # 高风险时减少频率限制和变化阈值
+            min_change = leverage_config.get('high_risk_min_change', 0.02)  # 高风险时2%变化即更新
+            leverage_change = abs(target_leverage - self._current_leverage_ratio)
+            
+            if leverage_change >= min_change:
+                self.algorithm.log_debug(f"高风险状况，杠杆变化达到阈值: {leverage_change:.3f} >= {min_change}", log_type="risk")
+                return True
+        
+        # 检查更新频率（调整为小时级别，而非天级别）
         if self._last_leverage_update:
-            days_since_update = (self.algorithm.Time - self._last_leverage_update).days
-            if days_since_update < update_frequency:
-                return False
+            hours_since_update = (self.algorithm.Time - self._last_leverage_update).total_seconds() / 3600
+            min_hours = leverage_config.get('leverage_adjustment_frequency_hours', 2)  # 最少2小时间隔
+            
+            if hours_since_update < min_hours:
+                # 但如果变化幅度很大，仍然允许更新
+                leverage_change = abs(target_leverage - self._current_leverage_ratio)
+                if leverage_change >= 0.1:  # 10%以上的大变化
+                    self.algorithm.log_debug(f"大幅杠杆变化，绕过频率限制: {leverage_change:.3f}", log_type="risk")
+                    return True
+                else:
+                    self.algorithm.log_debug(f"杠杆更新频率限制: 距上次更新{hours_since_update:.1f}小时 < {min_hours}小时", log_type="risk")
+                    return False
         
-        # 检查杠杆变化幅度
-        min_change = leverage_config.get('min_leverage_change', 0.05)
+        # 检查杠杆变化幅度（降低阈值）
+        min_change = leverage_config.get('min_leverage_change', 0.03)  # 从0.05降低到0.03
         leverage_change = abs(target_leverage - self._current_leverage_ratio)
         
-        return leverage_change >= min_change
+        if leverage_change >= min_change:
+            self.algorithm.log_debug(f"杠杆变化达到阈值: {leverage_change:.3f} >= {min_change}", log_type="risk")
+            return True
+        else:
+            self.algorithm.log_debug(f"杠杆变化不足: {leverage_change:.3f} < {min_change}", log_type="risk")
+            return False
     
     def get_current_leverage_ratio(self):
         """

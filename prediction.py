@@ -18,17 +18,28 @@ class PredictionEngine:
         """生成多时间跨度预测"""
         predictions = {}
         
+        self.algorithm.log_debug(f"开始生成预测: {len(symbols)}个股票, {len(models)}个模型", log_type="prediction")
+        
         for symbol in symbols:
             try:
-                prediction_data = self._predict_single_symbol(symbol, models.get(symbol))
+                model_info = models.get(symbol)
+                if model_info is None:
+                    self.algorithm.log_debug(f"跳过{symbol}: 无可用模型", log_type="prediction")
+                    continue
+                    
+                prediction_data = self._predict_single_symbol(symbol, model_info)
                 if prediction_data:
                     predictions[symbol] = prediction_data
+                    self.algorithm.log_debug(f"✓ {symbol}: 预测生成成功", log_type="prediction")
+                else:
+                    self.algorithm.log_debug(f"✗ {symbol}: 预测生成失败", log_type="prediction")
                     
             except Exception as e:
-                self.algorithm.log_debug(f"Error predicting {symbol}: {e}", log_type="prediction")
+                self.algorithm.log_debug(f"✗ {symbol}: 预测异常: {e}", log_type="prediction")
                 continue
         
-        self.algorithm.log_debug(f"Generated predictions for {len(predictions)} symbols", log_type="prediction")
+        success_rate = len(predictions) / len(symbols) * 100 if symbols else 0
+        self.algorithm.log_debug(f"预测生成完成: {len(predictions)}/{len(symbols)} ({success_rate:.1f}%)", log_type="prediction")
         return predictions
     
     def _predict_single_symbol(self, symbol, model_info):
@@ -409,24 +420,28 @@ class ExpectedReturnCalculator:
         """计算预期收益率"""
         expected_returns = {}
         valid_symbols = []
+        raw_returns = []
+        final_returns = []
         
         for symbol, pred_data in predictions.items():
             try:
                 # 计算多时间跨度加权收益率
                 weighted_return = self._calculate_weighted_return(pred_data)
                 
-                # 应用置信度调整
+                # 应用置信度调整 - 减少过度压缩
                 confidence_adjusted_return = self._apply_confidence_adjustment(
                     weighted_return, pred_data['confidence']
                 )
                 
-                # 应用市场状态调整
+                # 应用市场状态调整 - 减少过度压缩
                 regime_adjusted_return = self._apply_regime_adjustment(
                     confidence_adjusted_return, pred_data['market_regime']
                 )
                 
                 expected_returns[symbol] = regime_adjusted_return
                 valid_symbols.append(symbol)
+                raw_returns.append(weighted_return)
+                final_returns.append(regime_adjusted_return)
                 
                 self.algorithm.log_debug(f"{symbol} expected return calculation:", log_type="prediction")
                 self.algorithm.log_debug(f"  Raw weighted: {weighted_return:.6f}", log_type="prediction")
@@ -436,6 +451,30 @@ class ExpectedReturnCalculator:
             except Exception as e:
                 self.algorithm.log_debug(f"Error calculating expected return for {symbol}: {e}", log_type="prediction")
                 continue
+        
+        # 诊断信息：检查收益分布
+        if raw_returns and final_returns:
+            raw_std = np.std(raw_returns)
+            final_std = np.std(final_returns)
+            raw_range = max(raw_returns) - min(raw_returns)
+            final_range = max(final_returns) - min(final_returns)
+            
+            self.algorithm.log_debug(f"预期收益分布诊断:", log_type="prediction")
+            self.algorithm.log_debug(f"  原始收益标准差: {raw_std:.6f}, 范围: {raw_range:.6f}", log_type="prediction")
+            self.algorithm.log_debug(f"  最终收益标准差: {final_std:.6f}, 范围: {final_range:.6f}", log_type="prediction")
+            self.algorithm.log_debug(f"  调整导致的差异压缩: {((raw_std-final_std)/raw_std*100):.1f}%", log_type="prediction")
+            
+            # 如果差异被过度压缩，放大最终收益差异
+            if final_std < raw_std * 0.3:  # 如果标准差被压缩超过70%
+                self.algorithm.log_debug("检测到收益差异过度压缩，应用差异放大", log_type="prediction")
+                mean_return = np.mean(final_returns)
+                amplified_returns = {}
+                for i, symbol in enumerate(valid_symbols):
+                    deviation = final_returns[i] - mean_return
+                    amplified_return = mean_return + deviation * 2.0  # 放大差异2倍
+                    amplified_returns[symbol] = amplified_return
+                    self.algorithm.log_debug(f"  {symbol}: {final_returns[i]:.6f} -> {amplified_return:.6f}", log_type="prediction")
+                expected_returns = amplified_returns
         
         return expected_returns, valid_symbols
     
@@ -460,23 +499,26 @@ class ExpectedReturnCalculator:
         return weighted_return
     
     def _apply_confidence_adjustment(self, base_return, confidence):
-        """应用置信度调整"""
+        """应用置信度调整 - 减少过度压缩"""
         overall_confidence = confidence.get('overall_confidence', 0.5)
         
-        # 低置信度时缩小预期收益
-        confidence_factor = 0.5 + 0.5 * overall_confidence
+        # 调整置信度因子，减少过度压缩，保持更多收益差异
+        # 原来：0.5 + 0.5 * confidence (范围0.5-1.0)
+        # 现在：0.7 + 0.3 * confidence (范围0.7-1.0)
+        confidence_factor = 0.7 + 0.3 * overall_confidence
         adjusted_return = base_return * confidence_factor
         
         return adjusted_return
     
     def _apply_regime_adjustment(self, base_return, market_regime):
-        """应用市场状态调整"""
+        """应用市场状态调整 - 减少过度压缩"""
+        # 调整因子，减少压缩强度，保持更多差异
         regime_factors = {
-            'high_volatility': 0.8,  # 高波动时保守
-            'trending': 1.2,         # 趋势明确时积极
+            'high_volatility': 0.9,  # 高波动时保守 (从0.8调整为0.9)
+            'trending': 1.1,         # 趋势明确时积极 (从1.2调整为1.1)
             'low_volatility': 1.0,   # 低波动时正常
             'neutral': 1.0,          # 中性时正常
-            'unknown': 0.9           # 未知时略保守
+            'unknown': 0.95          # 未知时略保守 (从0.9调整为0.95)
         }
         
         factor = regime_factors.get(market_regime, 1.0)

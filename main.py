@@ -16,8 +16,8 @@ from data_processing import DataProcessor
 from model_training import ModelTrainer
 from prediction import (PredictionEngine, ExpectedReturnCalculator, 
                        PredictionValidator)
-from risk_management import (RiskManager, DrawdownMonitor, VolatilityMonitor, 
-                           ConcentrationLimiter, HedgingManager)
+from risk_management import (RiskManager, VIXMonitor, HedgingManager, 
+                           DrawdownMonitor, VolatilityMonitor, ConcentrationLimiter)
 from portfolio_optimization import PortfolioOptimizer
 from covariance_calculator import CovarianceCalculator
 from smart_rebalancer import SmartRebalancer
@@ -52,6 +52,21 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
             for symbol in self.config.SYMBOLS:
                 self.AddEquity(symbol, Resolution.Daily)
             
+            # 添加VIX指数数据源 - 参考vix.py的简洁方法
+            try:
+                self.vix_symbol = self.AddIndex("VIX").Symbol
+                self.log_debug("VIX指数已添加到数据源", log_type="risk")
+            except Exception as e:
+                self.log_debug(f"添加VIX指数失败: {e}", log_type="risk")
+                self.vix_symbol = None
+            
+            # 添加对冲产品
+            try:
+                self.AddEquity("SQQQ", Resolution.Daily)
+                self.log_debug("对冲产品 SQQQ 已添加到数据源", log_type="risk")
+            except Exception as e:
+                self.log_debug(f"添加对冲产品失败: {e}", log_type="risk")
+            
             # 初始化功能模块
             self._initialize_modules()
             
@@ -74,6 +89,10 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
             'daily_returns': [],
             'total_prediction_time': 0
         }
+        
+        # 警报时间限制
+        self.last_drawdown_alert_time = None
+        self.last_volatility_alert_time = None
         
         # 时间跟踪
         self.algorithm_start_time = time.time()
@@ -114,8 +133,8 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
         self.model_trainer = ModelTrainer(self)
         
         # 高级训练管理器
-        from training_manager import AdvancedTrainingManager
-        self.advanced_training_manager = AdvancedTrainingManager(self)
+        from training_manager import TrainingManager
+        self.training_manager = TrainingManager(self)
         
         # 不在初始化时进行预训练，避免初始化时间过长
         # 预训练将在非交易时间进行
@@ -123,8 +142,8 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
         self.pretrain_scheduled = False
         
         # 初始化训练系统（仅基础初始化，不包含预训练）
-        if hasattr(self.advanced_training_manager, 'initialize_training_system'):
-            self.advanced_training_manager.initialize_training_system()
+        if hasattr(self.training_manager, 'initialize_training_system'):
+            self.training_manager.initialize_training_system()
         
         # 预测模块
         self.prediction_engine = PredictionEngine(self)
@@ -223,34 +242,28 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
             self.log_debug("开始非交易时间预训练...", log_type="algorithm")
             self.pretrain_scheduled = True
             
-            # 初始化训练系统（仅加载缓存，不进行实际预训练）
-            if hasattr(self.advanced_training_manager, '_test_object_store_connection'):
-                if not self.advanced_training_manager._test_object_store_connection():
-                    self.log_debug("ObjectStore连接测试失败，跳过预训练", log_type="algorithm")
-                    return
-            
             # 尝试加载缓存的预训练模型
-            if hasattr(self.advanced_training_manager, '_load_cached_models'):
-                if self.advanced_training_manager._load_cached_models():
+            if hasattr(self.training_manager, '_load_cached_models'):
+                if self.training_manager._load_cached_models():
                     self.log_debug("成功加载缓存的预训练模型", log_type="algorithm")
-                    self.advanced_training_manager.pretrained_models_loaded = True
-                    self.advanced_training_manager.update_algorithm_models()
+                    self.training_manager.pretrained_models_loaded = True
+                    self.training_manager.update_algorithm_models()
                     self.pretrain_completed = True
                     self.pretrain_scheduled = False
                     return
             
             # 如果没有缓存，进行实际预训练
-            if hasattr(self.advanced_training_manager, '_perform_pretrain'):
+            if hasattr(self.training_manager, '_perform_pretrain'):
                 self.log_debug("开始执行历史数据预训练...", log_type="algorithm")
                 pretrain_start_time = time.time()
                 
-                if self.advanced_training_manager._perform_pretrain():
+                if self.training_manager._perform_pretrain():
                     # 缓存训练好的模型
-                    if hasattr(self.advanced_training_manager, '_cache_models'):
-                        self.advanced_training_manager._cache_models()
+                    if hasattr(self.training_manager, '_cache_models'):
+                        self.training_manager._cache_models()
                     
-                    self.advanced_training_manager.pretrained_models_loaded = True
-                    self.advanced_training_manager.update_algorithm_models()
+                    self.training_manager.pretrained_models_loaded = True
+                    self.training_manager.update_algorithm_models()
                     self.pretrain_completed = True
                     
                     pretrain_time = time.time() - pretrain_start_time
@@ -266,9 +279,9 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
   
     def _should_retrain(self):
         """判断是否应该重新训练模型"""
-        # 使用高级训练管理器的智能判断
-        if hasattr(self, 'advanced_training_manager'):
-            return self.advanced_training_manager.should_perform_training()
+        # 使用训练管理器的智能判断
+        if hasattr(self, 'training_manager'):
+            return self.training_manager.should_perform_training()
         
         # 备用逻辑：检查全局开关
         if not self.config.TRAINING_CONFIG['enable_retraining']:
@@ -311,23 +324,23 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
         try:
             self.log_debug("Starting optimized training process", log_type="algorithm")
             
-            # 优先使用高级训练管理器
-            if hasattr(self, 'advanced_training_manager'):
+            # 优先使用训练管理器
+            if hasattr(self, 'training_manager'):
                 # 如果预训练已完成，优先使用预训练模型
-                if self.pretrain_completed and self.advanced_training_manager.pretrained_models_loaded:
+                if self.pretrain_completed and self.training_manager.pretrained_models_loaded:
                     self.log_debug("使用已有的预训练模型", log_type="algorithm")
-                    successful_symbols = self.advanced_training_manager.get_tradable_symbols()
+                    successful_symbols = self.training_manager.get_tradable_symbols()
                     if successful_symbols:
                         self.log_debug(f"预训练模型可用: {len(successful_symbols)}个股票", log_type="algorithm")
                         return True
                 
                 # 否则进行优化训练
-                training_success = self.advanced_training_manager.perform_optimized_training()
+                training_success = self.training_manager.perform_optimized_training()
                 
                 if training_success:
                     # 更新模型引用
-                    self.advanced_training_manager.update_algorithm_models()
-                    successful_symbols = self.advanced_training_manager.get_tradable_symbols()
+                    self.training_manager.update_algorithm_models()
+                    successful_symbols = self.training_manager.get_tradable_symbols()
                     
                     # 记录训练统计
                     total_time = time.time() - training_start_time
@@ -387,8 +400,13 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
             
             # 检查是否有可用的训练模型
             try:
-                tradable_symbols = self.model_trainer.get_tradable_symbols()
-                self.log_debug("Retrieved tradable symbols: " + str(len(tradable_symbols)), log_type="algorithm")
+                # 优先使用训练管理器的模型
+                if hasattr(self, 'training_manager') and self.training_manager.pretrained_models_loaded:
+                    tradable_symbols = self.training_manager.get_tradable_symbols()
+                    self.log_debug("Retrieved tradable symbols from training_manager: " + str(len(tradable_symbols)), log_type="algorithm")
+                else:
+                    tradable_symbols = self.model_trainer.get_tradable_symbols()
+                    self.log_debug("Retrieved tradable symbols from model_trainer: " + str(len(tradable_symbols)), log_type="algorithm")
             except Exception as symbol_error:
                 self.log_debug("Error getting tradable symbols: " + str(symbol_error), log_type="algorithm")
                 tradable_symbols = []
@@ -415,22 +433,72 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
             self.log_debug("Starting model-based rebalancing", log_type="algorithm")
             
             # 获取可交易的股票列表
-            tradable_symbols = self.model_trainer.get_tradable_symbols()
+            if hasattr(self, 'training_manager') and self.training_manager.pretrained_models_loaded:
+                tradable_symbols = self.training_manager.get_tradable_symbols()
+                self.log_debug(f"从训练管理器获取可交易股票: {len(tradable_symbols) if tradable_symbols else 0}个", log_type="algorithm")
+            else:
+                tradable_symbols = self.model_trainer.get_tradable_symbols()
+                self.log_debug(f"从模型训练器获取可交易股票: {len(tradable_symbols) if tradable_symbols else 0}个", log_type="algorithm")
             
             if not tradable_symbols:
                 self.log_debug("No tradable symbols after training, skipping rebalance", log_type="algorithm")
                 return
 
             # 使用预测引擎生成预测
-            models = self.model_trainer.get_trained_models()
-            predictions = self.prediction_engine.generate_multi_horizon_predictions(
-                models, tradable_symbols
-            )
+            if hasattr(self, 'training_manager') and self.training_manager.pretrained_models_loaded:
+                # 从训练管理器获取模型
+                models = {}
+                for symbol in tradable_symbols:
+                    model = self.training_manager.get_model_for_symbol(symbol)
+                    if model is not None:
+                        models[symbol] = {
+                            'model': model,
+                            'scaler': self.training_manager.get_scaler_for_symbol(symbol),
+                            'effective_lookback': self.training_manager.get_effective_lookback_for_symbol(symbol)
+                        }
+                self.log_debug(f"从训练管理器获取训练模型: {len(models)}个", log_type="algorithm")
+            else:
+                models = self.model_trainer.get_trained_models()
+                self.log_debug(f"从模型训练器获取训练模型: {len(models) if models else 0}个", log_type="algorithm")
+            
+            if not models:
+                self.log_debug("No trained models available, using fallback strategy", log_type="algorithm")
+                self._rebalance_with_fallback_strategy()
+                return
+            
+            # 显示模型详情
+            for symbol, model_info in models.items():
+                if model_info:
+                    self.log_debug(f"  {symbol}: 模型可用", log_type="algorithm")
+                else:
+                    self.log_debug(f"  {symbol}: 模型不可用", log_type="algorithm")
+            
+            # 尝试生成预测
+            try:
+                predictions = self.prediction_engine.generate_multi_horizon_predictions(
+                    models, tradable_symbols
+                )
+                self.log_debug(f"预测生成结果: {len(predictions) if predictions else 0}个预测", log_type="algorithm")
+            except Exception as e:
+                self.log_debug(f"预测生成异常: {str(e)}", log_type="algorithm")
+                predictions = None
+            
+            # 更新训练管理器的预测成功率统计
+            had_valid_predictions = predictions is not None and len(predictions) > 0
+            if hasattr(self, 'training_manager') and hasattr(self.training_manager, 'update_prediction_success_rate'):
+                self.training_manager.update_prediction_success_rate(had_valid_predictions)
             
             if not predictions:
                 self.log_debug("No valid predictions generated, using fallback strategy", log_type="algorithm")
                 self._rebalance_with_fallback_strategy()
                 return
+            
+            # 显示原始预测详情
+            self.log_debug(f"Generated predictions for {len(predictions)} symbols", log_type="algorithm")
+            for symbol, pred_data in predictions.items():
+                confidence = pred_data.get('confidence', {}).get('overall_confidence', 0)
+                expected_return = pred_data.get('expected_return', 0)
+                self.log_debug(f"  {symbol}: 置信度={confidence:.3f}, 预期收益={expected_return:.4f}", log_type="algorithm")
             
             # 验证预测结果 - 使用严格验证提升胜率
             validation_results = self.prediction_validator.strict_validation_for_winning_rate(predictions)
@@ -441,6 +509,12 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
             total_predictions = len(predictions)
             valid_count = len(valid_predictions)
             self.log_debug(f"严格验证结果: {valid_count}/{total_predictions} 通过 ({valid_count/total_predictions*100:.1f}%)", log_type="algorithm")
+            
+            # 显示被过滤掉的预测
+            filtered_out = set(predictions.keys()) - set(valid_predictions.keys())
+            if filtered_out:
+                self.log_debug(f"被过滤的股票: {list(filtered_out)}", log_type="algorithm")
+                self.log_debug(f"置信度阈值: {self.config.PREDICTION_CONFIG['confidence_threshold']}", log_type="algorithm")
             
             if not valid_predictions:
                 self.log_debug("No valid predictions after validation, using fallback strategy", log_type="algorithm")
@@ -564,7 +638,7 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
             
             # VIX对冲产品整合
             vix_risk_state = getattr(self, '_vix_risk_state', None)
-            if vix_risk_state and vix_risk_state.get('defense_mode', False):
+            if vix_risk_state and vix_risk_state.get('mode', 'NORMAL') in ['DEFENSE', 'EXTREME']:
                 self.log_debug("应用VIX对冲策略", log_type="algorithm")
                 final_weights, final_symbols = self.hedging_manager.integrate_hedging_with_portfolio(
                     weights, final_valid_symbols, vix_risk_state
@@ -638,36 +712,63 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
             self.log_debug("Error in fallback strategy: " + str(e), log_type="algorithm")
     
     def _apply_momentum_strategy(self):
-        """应用简单动量策略"""
+        """应用基于动量的权重分配策略"""
         try:
             momentum_scores = {}
             
             for symbol in self.config.SYMBOLS:
                 try:
                     # 获取过去20天的数据计算动量
-                    history = self.History(symbol, 20, Resolution.DAILY)
+                    history = self.History(symbol, 20, Resolution.Daily)
                     prices = [x.Close for x in history]
                     
                     if len(prices) >= 20:
                         momentum = (prices[-1] - prices[0]) / prices[0]
                         momentum_scores[symbol] = momentum
+                        self.log_debug(f"{symbol} 动量分数: {momentum:.4f}", log_type="algorithm")
                     
                 except Exception:
                     continue
             
             if momentum_scores:
-                # 选择动量最强的股票进行等权重配置
-                sorted_symbols = sorted(momentum_scores.keys(), 
-                                      key=lambda x: momentum_scores[x], reverse=True)
+                # 过滤出正动量的股票
+                positive_momentum = {k: v for k, v in momentum_scores.items() if v > 0}
                 
-                # 选择前50%的股票
-                top_symbols = sorted_symbols[:max(1, len(sorted_symbols) // 2)]
-                n_top = len(top_symbols)
-                
-                weights = [1.0 / n_top] * n_top
-                self.portfolio_optimizer.smart_rebalancer.execute_smart_rebalance(weights, top_symbols)
-                
-                self.log_debug("Applied momentum strategy", log_type="algorithm")
+                if positive_momentum:
+                    # 根据动量强度分配权重
+                    symbols_list = list(positive_momentum.keys())
+                    momentum_values = list(positive_momentum.values())
+                    
+                    # 将负动量设为0，正动量进行归一化
+                    momentum_values = np.array(momentum_values)
+                    momentum_values = np.maximum(momentum_values, 0)  # 确保非负
+                    
+                    # 权重与动量成正比
+                    if np.sum(momentum_values) > 0:
+                        weights = momentum_values / np.sum(momentum_values)
+                    else:
+                        # 如果所有动量都是0，使用等权重
+                        weights = np.ones(len(symbols_list)) / len(symbols_list)
+                    
+                    # 记录权重分配
+                    self.log_debug("=== 动量策略权重分配 ===", log_type="algorithm")
+                    for i, symbol in enumerate(symbols_list):
+                        self.log_debug(f"  {symbol}: 动量={momentum_values[i]:.4f}, 权重={weights[i]:.4f} ({weights[i]*100:.2f}%)", log_type="algorithm")
+                    
+                    self.portfolio_optimizer.smart_rebalancer.execute_smart_rebalance(weights, symbols_list)
+                    self.log_debug(f"Applied momentum strategy with {len(symbols_list)} positive momentum stocks", log_type="algorithm")
+                    
+                else:
+                    # 如果没有正动量股票，选择动量最好的前50%进行等权重
+                    sorted_symbols = sorted(momentum_scores.keys(), 
+                                          key=lambda x: momentum_scores[x], reverse=True)
+                    top_symbols = sorted_symbols[:max(1, len(sorted_symbols) // 2)]
+                    n_top = len(top_symbols)
+                    weights = [1.0 / n_top] * n_top
+                    
+                    self.log_debug("No positive momentum stocks, using top 50% with equal weights", log_type="algorithm")
+                    self.portfolio_optimizer.smart_rebalancer.execute_smart_rebalance(weights, top_symbols)
+                    
             else:
                 self.log_debug("No momentum data available, keeping current positions", log_type="algorithm")
                 
@@ -742,23 +843,57 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
     def _update_risk_monitoring(self):
         """更新风险监控指标"""
         try:
+            # 更新VIX数据监控 - 每天只更新一次
+            if hasattr(self, 'vix_monitor'):
+                vix_risk_state = self.vix_monitor.update_vix_data(self.Time)
+                data_source = vix_risk_state.get('data_source', '未知')
+                
+                # 只有在实际更新数据时才记录详细日志
+                if "今日首次更新" in data_source:
+                    self.log_debug(f"VIX风险状态更新: VIX={vix_risk_state.get('vix_value', 'N/A'):.2f}, 模式={vix_risk_state.get('mode', 'N/A')}, 来源={data_source}", log_type="risk")
+            
             # 更新回撤监控
             current_value = self.Portfolio.TotalPortfolioValue
-            drawdown_metrics = self.drawdown_monitor.update_portfolio_value(current_value)
+            current_drawdown = self.drawdown_monitor.update_portfolio_value(current_value)
             
-            # 计算日收益率
-            if hasattr(self, 'previous_portfolio_value'):
+            # 保存回撤值到实例变量
+            self._current_drawdown = current_drawdown if current_drawdown is not None else 0.0
+            
+            # 计算日收益率和波动率
+            if hasattr(self, 'previous_portfolio_value') and self.previous_portfolio_value > 0:
                 daily_return = (current_value - self.previous_portfolio_value) / self.previous_portfolio_value
-                volatility_metrics = self.volatility_monitor.update_return(daily_return)
+                current_volatility = self.volatility_monitor.update_return(daily_return)
+                
+                # 保存波动率值到实例变量
+                self._current_volatility = current_volatility if current_volatility is not None else 0.0
+                
+                # 每天首次计算时记录日志
+                current_date = self.Time.date()
+                if not hasattr(self, '_last_risk_log_date') or self._last_risk_log_date != current_date:
+                    self._last_risk_log_date = current_date
+                    self.log_debug(f"风险监控数据更新: 波动率={self._current_volatility:.3f}, 回撤={self._current_drawdown:.3f}, 日收益率={daily_return:.4f}", log_type="risk")
             else:
-                volatility_metrics = {'volatility_alert': False}
+                self._current_volatility = 0.0
+                if not hasattr(self, 'previous_portfolio_value'):
+                    self.log_debug("首次运行，设置初始投资组合价值", log_type="risk")
             
-            # 记录风险指标
-            if drawdown_metrics.get('drawdown_alert', False):
-                self.log_debug("Drawdown alert", log_type="algorithm")
+            # 检查警报条件并记录
+            drawdown_threshold = self.config.RISK_CONFIG.get('max_drawdown_threshold', 0.15)
+            volatility_threshold = self.config.RISK_CONFIG.get('volatility_threshold', 0.25)
             
-            if volatility_metrics.get('volatility_alert', False):
-                self.log_debug("Volatility alert", log_type="algorithm")
+            if self._current_drawdown > drawdown_threshold:
+                # 限制警报频率：每小时最多一次
+                if (self.last_drawdown_alert_time is None or 
+                    (self.Time - self.last_drawdown_alert_time).total_seconds() >= 3600):
+                    self.log_debug(f"Drawdown alert: {self._current_drawdown:.2%}", log_type="risk")
+                    self.last_drawdown_alert_time = self.Time
+            
+            if self._current_volatility > volatility_threshold:
+                # 限制警报频率：每小时最多一次
+                if (self.last_volatility_alert_time is None or 
+                    (self.Time - self.last_volatility_alert_time).total_seconds() >= 3600):
+                    self.log_debug(f"Volatility alert: {self._current_volatility:.2%}", log_type="risk")
+                    self.last_volatility_alert_time = self.Time
             
             # 保存当前值用于下次计算
             self.previous_portfolio_value = current_value
@@ -805,10 +940,22 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
             
             # 检查是否需要重新训练
             should_retrain = self._should_retrain()
+            self.log_debug(f"训练检查结果: should_retrain={should_retrain}", log_type="algorithm")
+            
+            # 预先检查当前模型状态
+            current_models = self.model_trainer.get_trained_models()
+            current_tradable = self.model_trainer.get_tradable_symbols()
+            self.log_debug(f"训练前模型状态: {len(current_models) if current_models else 0}个模型, {len(current_tradable) if current_tradable else 0}个可交易股票", log_type="algorithm")
             
             if should_retrain:
                 self.log_debug("Starting model retraining process", log_type="algorithm")
                 training_success = self._perform_training()
+                self.log_debug(f"模型训练结果: success={training_success}", log_type="algorithm")
+                
+                # 训练后再次检查模型状态
+                after_models = self.model_trainer.get_trained_models()
+                after_tradable = self.model_trainer.get_tradable_symbols()
+                self.log_debug(f"训练后模型状态: {len(after_models) if after_models else 0}个模型, {len(after_tradable) if after_tradable else 0}个可交易股票", log_type="algorithm")
                 
                 if not training_success:
                     self.log_debug("Training failed, proceeding with fallback strategy", log_type="algorithm")
@@ -936,6 +1083,10 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
     def log_debug(self, message, log_type="general"):
         """增强的调试日志方法 - 添加消息限流和延时控制"""
         try:
+            # WarmUp期间完全禁用日志输出
+            if hasattr(self, 'IsWarmingUp') and self.IsWarmingUp:
+                return
+            
             # 临时调试：先尝试直接输出，如果失败再使用复杂逻辑
             if hasattr(self, '_simple_log_mode') and self._simple_log_mode:
                 current_date = self.Time.strftime('%Y-%m-%d %H:%M:%S')
@@ -1083,6 +1234,9 @@ class CNNTransformTradingAlgorithm(QCAlgorithm):
                 
         except Exception as e:
             # 避免日志方法本身出错导致算法崩溃
+            # WarmUp期间也不输出错误日志
+            if hasattr(self, 'IsWarmingUp') and self.IsWarmingUp:
+                return
             try:
                 current_date = self.Time.strftime('%Y-%m-%d %H:%M:%S')
                 self.Debug(f"[{current_date}] ERROR in log_debug: {e}")

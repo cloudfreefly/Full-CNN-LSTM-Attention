@@ -32,8 +32,8 @@ class OptimizationStrategies:
                 {'type': 'eq', 'fun': lambda x: np.sum(x) - 1.0},  # 权重和为1
             )
             
-            # 边界条件
-            bounds = tuple((0, 0.4) for _ in range(n))  # 每只股票权重0-40%
+            # 边界条件 - 放宽以允许更大的权重差异
+            bounds = tuple((0.02, 0.25) for _ in range(n))  # 每只股票权重2-25%，强制最小权重避免零权重
             
             # 初始猜测
             x0 = np.ones(n) / n
